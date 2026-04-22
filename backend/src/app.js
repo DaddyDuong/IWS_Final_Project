@@ -3,6 +3,7 @@ import { addressesRoutes } from './routes/addresses.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { cartRoutes } from './routes/cart.routes.js';
 import { internalProductsRoutes } from './routes/internalProducts.routes.js';
+import { ordersRoutes } from './routes/orders.routes.js';
 import { productsRoutes } from './routes/products.routes.js';
 import { reviewsRoutes } from './routes/reviews.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
@@ -19,6 +20,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/v1/addresses', addressesRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/cart', cartRoutes);
+app.use('/api/v1/orders', ordersRoutes);
 app.use('/api/v1/products', productsRoutes);
 app.use('/api/v1/internal/products', internalProductsRoutes);
 app.use('/api/v1', reviewsRoutes);

@@ -1,0 +1,386 @@
+import { readFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import Database from 'better-sqlite3';
+import request from 'supertest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+const isolatedDbPath = join(tmpdir(), `laptop-retail-orders-${Date.now()}.db`);
+
+process.env.DATABASE_URL = `file:${isolatedDbPath}`;
+process.env.JWT_SECRET = 'orders-test-secret';
+
+let app;
+let prisma;
+let signAuthToken;
+
+async function applySchemaToDatabase(dbPath) {
+  const migrationsDir = join(process.cwd(), 'prisma', 'migrations');
+  const entries = await readdir(migrationsDir, { withFileTypes: true });
+  const migrationDirs = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  const db = new Database(dbPath);
+  try {
+    for (const migrationDir of migrationDirs) {
+      const migrationSqlPath = join(migrationsDir, migrationDir, 'migration.sql');
+      const migrationSql = await readFile(migrationSqlPath, 'utf8');
+      db.exec(migrationSql);
+    }
+  } finally {
+    db.close();
+  }
+}
+
+async function createUserWithToken(emailPrefix) {
+  const user = await prisma.user.create({
+    data: {
+      email: `${emailPrefix}-${Date.now()}@example.com`,
+      passwordHash: 'not-used-in-this-test',
+      fullName: `${emailPrefix} user`,
+      role: 'customer',
+    },
+  });
+
+  return {
+    user,
+    authHeader: `Bearer ${signAuthToken({ sub: user.id, role: user.role })}`,
+  };
+}
+
+async function createProduct(suffix, overrides = {}) {
+  return prisma.product.create({
+    data: {
+      sku: `ORDER-${suffix}-${Date.now()}`,
+      name: `Order Product ${suffix}`,
+      brand: 'OrderBrand',
+      cpu: 'Intel Core i5',
+      ramGb: 8,
+      storageGb: 256,
+      screenSize: '14',
+      price: 12000000,
+      stockQty: 20,
+      description: `Order test product ${suffix}`,
+      imageUrl: `https://example.com/order-${suffix}.jpg`,
+      ...overrides,
+    },
+  });
+}
+
+async function createAddressForUser(userId, suffix) {
+  return prisma.address.create({
+    data: {
+      userId,
+      receiver: `Receiver ${suffix}`,
+      phone: '0900000000',
+      line1: `${suffix} line 1`,
+      ward: 'Ward 1',
+      district: 'District 1',
+      city: 'Ho Chi Minh City',
+    },
+  });
+}
+
+describe('orders checkout and cancel routes', () => {
+  beforeAll(async () => {
+    await applySchemaToDatabase(isolatedDbPath);
+    ({ signAuthToken } = await import('../../src/lib/jwt.js'));
+    ({ app } = await import('../../src/app.js'));
+    ({ prisma } = await import('../../src/lib/prisma.js'));
+  });
+
+  beforeEach(async () => {
+    await prisma.orderItem.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.cartItem.deleteMany();
+    await prisma.address.deleteMany();
+    await prisma.product.deleteMany();
+    await prisma.user.deleteMany();
+  });
+
+  it('returns 401 for unauthenticated access', async () => {
+    const listRes = await request(app).get('/api/v1/orders');
+    const detailRes = await request(app).get('/api/v1/orders/any-id');
+    const checkoutRes = await request(app).post('/api/v1/orders/checkout').send({ addressId: 'any-id' });
+    const cancelRes = await request(app).patch('/api/v1/orders/any-id/cancel');
+
+    expect(listRes.status).toBe(401);
+    expect(detailRes.status).toBe(401);
+    expect(checkoutRes.status).toBe(401);
+    expect(cancelRes.status).toBe(401);
+  });
+
+  it('creates order on checkout, snapshots prices, decrements stock, and clears cart', async () => {
+    const { user, authHeader } = await createUserWithToken('checkout-success');
+    const address = await createAddressForUser(user.id, 'checkout-success');
+    const productA = await createProduct('checkout-a', { price: 10000000, stockQty: 5 });
+    const productB = await createProduct('checkout-b', { price: 7000000, stockQty: 6 });
+
+    await prisma.cartItem.createMany({
+      data: [
+        { userId: user.id, productId: productA.id, quantity: 2 },
+        { userId: user.id, productId: productB.id, quantity: 1 },
+      ],
+    });
+
+    const res = await request(app)
+      .post('/api/v1/orders/checkout')
+      .set('Authorization', authHeader)
+      .send({ addressId: address.id });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual(
+      expect.objectContaining({
+        userId: user.id,
+        addressId: address.id,
+        status: 'pending',
+        subtotal: 27000000,
+        shippingFee: 0,
+        total: 27000000,
+      }),
+    );
+    expect(res.body.data.items).toHaveLength(2);
+
+    const orderId = res.body.data.id;
+    const persistedOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+    expect(persistedOrder).toBeTruthy();
+    expect(persistedOrder.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: productA.id,
+          quantity: 2,
+          unitPrice: 10000000,
+          lineTotal: 20000000,
+        }),
+        expect.objectContaining({
+          productId: productB.id,
+          quantity: 1,
+          unitPrice: 7000000,
+          lineTotal: 7000000,
+        }),
+      ]),
+    );
+
+    const updatedProductA = await prisma.product.findUnique({ where: { id: productA.id } });
+    const updatedProductB = await prisma.product.findUnique({ where: { id: productB.id } });
+    expect(updatedProductA.stockQty).toBe(3);
+    expect(updatedProductB.stockQty).toBe(5);
+
+    const remainingCartItems = await prisma.cartItem.findMany({ where: { userId: user.id } });
+    expect(remainingCartItems).toHaveLength(0);
+  });
+
+  it('rejects checkout when cart is empty', async () => {
+    const { user, authHeader } = await createUserWithToken('checkout-empty-cart');
+    const address = await createAddressForUser(user.id, 'checkout-empty-cart');
+
+    const res = await request(app)
+      .post('/api/v1/orders/checkout')
+      .set('Authorization', authHeader)
+      .send({ addressId: address.id });
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('ORDER_CART_EMPTY');
+  });
+
+  it('rejects checkout for an address not owned by the user', async () => {
+    const { user, authHeader } = await createUserWithToken('checkout-owner');
+    const { user: otherUser } = await createUserWithToken('checkout-other');
+    const otherUserAddress = await createAddressForUser(otherUser.id, 'checkout-other');
+    const product = await createProduct('checkout-address');
+
+    await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        quantity: 1,
+      },
+    });
+
+    const res = await request(app)
+      .post('/api/v1/orders/checkout')
+      .set('Authorization', authHeader)
+      .send({ addressId: otherUserAddress.id });
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('ORDER_ADDRESS_NOT_FOUND');
+  });
+
+  it('rejects checkout when stock is no longer sufficient', async () => {
+    const { user, authHeader } = await createUserWithToken('checkout-stock');
+    const address = await createAddressForUser(user.id, 'checkout-stock');
+    const product = await createProduct('checkout-stock', { stockQty: 1 });
+
+    await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        quantity: 2,
+      },
+    });
+
+    const res = await request(app)
+      .post('/api/v1/orders/checkout')
+      .set('Authorization', authHeader)
+      .send({ addressId: address.id });
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('ORDER_STOCK_UNAVAILABLE');
+
+    const orderCount = await prisma.order.count();
+    expect(orderCount).toBe(0);
+  });
+
+  it('lists and retrieves only current user orders', async () => {
+    const { user: owner, authHeader: ownerToken } = await createUserWithToken('orders-owner');
+    const { user: otherUser } = await createUserWithToken('orders-other');
+    const ownerAddress = await createAddressForUser(owner.id, 'orders-owner');
+    const otherAddress = await createAddressForUser(otherUser.id, 'orders-other');
+
+    const ownerOrder = await prisma.order.create({
+      data: {
+        userId: owner.id,
+        addressId: ownerAddress.id,
+        status: 'pending',
+        subtotal: 1000000,
+        shippingFee: 0,
+        total: 1000000,
+      },
+    });
+
+    await prisma.order.create({
+      data: {
+        userId: otherUser.id,
+        addressId: otherAddress.id,
+        status: 'pending',
+        subtotal: 2000000,
+        shippingFee: 0,
+        total: 2000000,
+      },
+    });
+
+    const listRes = await request(app)
+      .get('/api/v1/orders')
+      .set('Authorization', ownerToken);
+
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.success).toBe(true);
+    expect(listRes.body.data).toHaveLength(1);
+    expect(listRes.body.data[0].id).toBe(ownerOrder.id);
+
+    const detailRes = await request(app)
+      .get(`/api/v1/orders/${ownerOrder.id}`)
+      .set('Authorization', ownerToken);
+
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.success).toBe(true);
+    expect(detailRes.body.data.id).toBe(ownerOrder.id);
+
+    const missingRes = await request(app)
+      .get('/api/v1/orders/not-owner-order-id')
+      .set('Authorization', ownerToken);
+
+    expect(missingRes.status).toBe(404);
+    expect(missingRes.body.success).toBe(false);
+    expect(missingRes.body.error.code).toBe('ORDER_NOT_FOUND');
+  });
+
+  it('cancels own pending order and restores stock', async () => {
+    const { user, authHeader } = await createUserWithToken('cancel-success');
+    const address = await createAddressForUser(user.id, 'cancel-success');
+    const product = await createProduct('cancel-success', { stockQty: 3 });
+
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+        status: 'pending',
+        subtotal: 20000000,
+        shippingFee: 0,
+        total: 20000000,
+      },
+    });
+
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        productId: product.id,
+        unitPrice: 10000000,
+        quantity: 2,
+        lineTotal: 20000000,
+      },
+    });
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { stockQty: 1 },
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/orders/${order.id}/cancel`)
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual(
+      expect.objectContaining({
+        id: order.id,
+        status: 'canceled',
+      }),
+    );
+
+    const updatedOrder = await prisma.order.findUnique({ where: { id: order.id } });
+    const updatedProduct = await prisma.product.findUnique({ where: { id: product.id } });
+    expect(updatedOrder.status).toBe('canceled');
+    expect(updatedProduct.stockQty).toBe(3);
+  });
+
+  it('rejects cancel for non-cancellable order status', async () => {
+    const { user, authHeader } = await createUserWithToken('cancel-status');
+    const address = await createAddressForUser(user.id, 'cancel-status');
+    const product = await createProduct('cancel-status');
+
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+        status: 'shipped',
+        subtotal: 10000000,
+        shippingFee: 0,
+        total: 10000000,
+      },
+    });
+
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        productId: product.id,
+        unitPrice: 10000000,
+        quantity: 1,
+        lineTotal: 10000000,
+      },
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/orders/${order.id}/cancel`)
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('ORDER_NOT_CANCELLABLE');
+  });
+});
+
+afterAll(async () => {
+  await prisma.$disconnect();
+  await rm(isolatedDbPath, { force: true });
+});
