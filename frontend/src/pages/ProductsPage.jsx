@@ -1,17 +1,58 @@
-import { Link } from 'react-router-dom'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
+import { ProductFilters } from '../components/ProductFilters'
+import { ProductGrid } from '../components/ProductGrid'
+import { apiClient } from '../lib/apiClient'
+import { buildProductQuery, updateSearchParamsWithQuery } from '../lib/buildProductQuery'
+
+async function fetchProducts(query) {
+  const response = await apiClient.get('/products', {
+    params: query,
+  })
+
+  return response.data
+}
 
 export function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query = useMemo(() => buildProductQuery(searchParams), [searchParams])
+
+  const productsQuery = useQuery({
+    queryKey: ['products', query],
+    queryFn: () => fetchProducts(query),
+    placeholderData: (previousData) => previousData,
+  })
+
+  const products = productsQuery.data?.data || []
+  const meta = productsQuery.data?.meta || {
+    page: query.page,
+    limit: query.limit,
+    total: 0,
+    totalPages: 0,
+  }
+
+  function updateQuery(patch) {
+    const nextParams = updateSearchParamsWithQuery(searchParams, patch)
+    setSearchParams(nextParams, { replace: true })
+  }
+
   return (
-    <section className="page" aria-labelledby="products-title">
-      <p className="eyebrow">Catalog foundation</p>
+    <section className="page page--catalog" aria-labelledby="products-title">
+      <p className="eyebrow">Laptop catalog</p>
       <h1 id="products-title">Products</h1>
-      <p>
-        Product listing UI will be implemented in later tasks. The route and layout are
-        in place.
-      </p>
-      <Link className="inline-link" to="/cart">
-        Continue to cart when ready
-      </Link>
+
+      <ProductFilters query={query} onQueryChange={updateQuery} />
+
+      <ProductGrid
+        products={products}
+        meta={meta}
+        isLoading={productsQuery.isLoading}
+        isError={productsQuery.isError}
+        error={productsQuery.error}
+        isFetching={productsQuery.isFetching}
+        onPageChange={(nextPage) => updateQuery({ page: nextPage })}
+      />
     </section>
   )
 }
