@@ -43,3 +43,17 @@ export async function requireAuth(req, _res, next) {
   req.authUser = user;
   return next();
 }
+
+export function requireRole(...roles) {
+  return (req, _res, next) => {
+    if (!req.authUser) {
+      return next({ status: 401, message: 'Unauthorized' });
+    }
+
+    if (!roles.includes(req.authUser.role)) {
+      return next({ status: 403, message: 'Forbidden' });
+    }
+
+    return next();
+  };
+}
