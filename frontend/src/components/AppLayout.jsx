@@ -21,30 +21,32 @@ export function AppLayout() {
             Laptop Retail
           </NavLink>
 
-          <div className="nav-links" role="list">
+          <ul className="nav-links">
             {primaryLinks.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
-                end={item.to === '/'}
-              >
-                {item.label}
-              </NavLink>
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
+                  end={item.to === '/'}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          <div className="nav-links nav-links--account" role="list">
+          <ul className="nav-links nav-links--account">
             {accountLinks.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => `nav-link nav-link--account ${isActive ? 'is-active' : ''}`}
-              >
-                {item.label}
-              </NavLink>
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) => `nav-link nav-link--account ${isActive ? 'is-active' : ''}`}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
             ))}
-          </div>
+          </ul>
         </nav>
       </header>
 

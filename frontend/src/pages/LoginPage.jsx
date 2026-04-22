@@ -2,7 +2,13 @@ import { Link, useLocation } from 'react-router-dom'
 
 export function LoginPage() {
   const location = useLocation()
-  const fromPath = location.state?.from
+  const fromState = location.state?.from
+  const fromPath =
+    typeof fromState === 'string'
+      ? fromState
+      : fromState
+        ? `${fromState.pathname ?? ''}${fromState.search ?? ''}${fromState.hash ?? ''}`
+        : ''
 
   return (
     <section className="page page--auth" aria-labelledby="login-title">

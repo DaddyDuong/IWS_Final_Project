@@ -42,4 +42,14 @@ describe('App routing shell', () => {
     expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument()
     expect(screen.getByText(/sign in to continue to your account/i)).toBeInTheDocument()
   })
+
+  it('preserves full intended URL when redirecting to login', () => {
+    render(
+      <MemoryRouter initialEntries={['/profile/orders?tab=open#recent']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText(/from \/profile\/orders\?tab=open#recent\./i)).toBeInTheDocument()
+  })
 })

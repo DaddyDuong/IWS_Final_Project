@@ -80,9 +80,16 @@ a {
 }
 
 .nav-links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.nav-links li {
+  display: flex;
 }
 
 .nav-links--account {
