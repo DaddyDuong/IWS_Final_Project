@@ -187,6 +187,27 @@ describe('GET /api/v1/products', () => {
     expect(res.body.success).toBe(false);
   });
 
+  it('returns 400 when inStock is not a strict boolean value', async () => {
+    const res = await request(app).get('/api/v1/products').query({ inStock: 'maybe' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns 400 when page contains non-numeric characters', async () => {
+    const res = await request(app).get('/api/v1/products').query({ page: '2abc' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns 400 when limit contains non-numeric characters', async () => {
+    const res = await request(app).get('/api/v1/products').query({ limit: '10foo' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
 });
 
 describe('GET /api/v1/products/:id', () => {

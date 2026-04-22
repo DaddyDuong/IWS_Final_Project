@@ -12,15 +12,20 @@ function parseInteger(value) {
   }
 
   if (typeof value === 'number') {
-    return Number.isInteger(value) ? value : Number.NaN;
+    return Number.isInteger(value) ? value : value;
   }
 
   if (typeof value !== 'string') {
-    return Number.NaN;
+    return value;
   }
 
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? Number.NaN : parsed;
+  const normalized = value.trim();
+
+  if (!/^[+-]?\d+$/.test(normalized)) {
+    return value;
+  }
+
+  return Number.parseInt(normalized, 10);
 }
 
 function parseBoolean(value) {
@@ -33,19 +38,19 @@ function parseBoolean(value) {
   }
 
   if (typeof value !== 'string') {
-    return undefined;
+    return value;
   }
 
   const normalized = value.trim().toLowerCase();
-  if (['true', '1', 'yes', 'y'].includes(normalized)) {
+  if (normalized === 'true') {
     return true;
   }
 
-  if (['false', '0', 'no', 'n'].includes(normalized)) {
+  if (normalized === 'false') {
     return false;
   }
 
-  return undefined;
+  return value;
 }
 
 const listProductsQuerySchema = z.object({
