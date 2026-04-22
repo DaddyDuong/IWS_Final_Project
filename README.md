@@ -37,11 +37,13 @@ Notes:
 - [ ] Backend and frontend run locally.
 - [ ] Postman environment variable `baseUrl` points to `http://localhost:8080`.
 - [ ] Postman `Auth > Register` or `Auth > Login` returns a JWT and sets `token`.
+- [ ] Postman `Internal Manager Products` proves manager JWT auth and internal create/update/delete endpoints.
 - [ ] Product listing and product detail endpoints return expected data.
-- [ ] Cart flow works: add item, view cart, update/remove item.
+- [ ] Cart flow works in Postman: add item, view cart, update quantity, remove item, then add again for checkout.
 - [ ] Address flow works: create and list addresses.
 - [ ] Checkout creates an order and clears the cart.
 - [ ] Order listing/detail/cancel endpoints behave correctly.
+- [ ] Postman `Auth Rate Limit Proof` returns `429 Too Many Requests` in repeated-run scenario.
 - [ ] Optional: review create/list flow works on a chosen product.
 
 ## Verification Commands

@@ -7,9 +7,11 @@ Demonstrate end-to-end user flow for the Laptop Retail Website and confirm key b
 ## Prep (5 minutes)
 
 1. Start backend:
+   - Terminal 1
    - `cd backend`
    - `JWT_SECRET=dev-insecure-jwt-secret npm run dev`
 2. Start frontend:
+   - Terminal 2
    - `cd frontend`
    - `npm run dev`
 3. Open frontend at `http://localhost:5173`.
@@ -47,6 +49,9 @@ Demonstrate end-to-end user flow for the Laptop Retail Website and confirm key b
 
 - Run `Cart > POST /api/v1/cart/items`.
 - Run `Cart > GET /api/v1/cart` and explain line item detail payload.
+- Run `Cart > PATCH /api/v1/cart/items/:id` to prove quantity update behavior.
+- Run `Cart > DELETE /api/v1/cart/items/:id` to prove remove-item behavior.
+- Run `Cart > POST /api/v1/cart/items` again before checkout so cart is not empty.
 - Run `Addresses > POST /api/v1/addresses` then `GET /api/v1/addresses`.
 - Run `Orders > POST /api/v1/orders/checkout`.
 - Highlight transactional behavior: stock validation, order creation, cart clearing.
