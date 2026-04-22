@@ -26,7 +26,7 @@ export function CheckoutPage() {
       queryClient.invalidateQueries({ queryKey: ['cart'] })
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      navigate(`/profile/orders/${order.id}`)
+      navigate(order?.id ? `/profile/orders/${order.id}` : '/profile/orders')
     },
     onError: (error) => {
       setFeedback(formatApiError(error, 'Checkout failed. Please try again.'))
@@ -58,9 +58,17 @@ export function CheckoutPage() {
       <p className="eyebrow">Checkout</p>
       <h1 id="checkout-title">Checkout</h1>
 
-      {feedback ? <p className="catalog-feedback catalog-feedback--error">{feedback}</p> : null}
+      {feedback ? (
+        <p className="catalog-feedback catalog-feedback--error" role="alert" aria-live="assertive">
+          {feedback}
+        </p>
+      ) : null}
 
-      {cartQuery.isLoading || addressesQuery.isLoading ? <p>Preparing your checkout...</p> : null}
+      {cartQuery.isLoading || addressesQuery.isLoading ? (
+        <p role="status" aria-live="polite">
+          Preparing your checkout...
+        </p>
+      ) : null}
 
       {cartQuery.isError ? (
         <p className="catalog-feedback catalog-feedback--error">

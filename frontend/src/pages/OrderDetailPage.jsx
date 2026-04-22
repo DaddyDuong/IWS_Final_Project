@@ -47,7 +47,29 @@ export function OrderDetailPage() {
   }
 
   const order = orderQuery.data
+
+  if (!order) {
+    return (
+      <section className="page page--customer" aria-labelledby="order-detail-title">
+        <h1 id="order-detail-title">Order details</h1>
+        <p className="catalog-feedback catalog-feedback--error">Order details are unavailable.</p>
+        <Link className="button button--secondary" to="/profile/orders">
+          Back to order history
+        </Link>
+      </section>
+    )
+  }
+
   const canCancel = cancellableStatuses.has(order.status)
+
+  function handleCancel(orderId) {
+    const confirmed = globalThis.confirm('Are you sure you want to cancel this order?')
+    if (!confirmed) {
+      return
+    }
+
+    cancelMutation.mutate(orderId)
+  }
 
   return (
     <section className="page page--customer" aria-labelledby="order-detail-title">
@@ -106,7 +128,7 @@ export function OrderDetailPage() {
           <button
             type="button"
             className="button button--secondary"
-            onClick={() => cancelMutation.mutate(order.id)}
+            onClick={() => handleCancel(order.id)}
             disabled={cancelMutation.isPending}
           >
             Cancel order

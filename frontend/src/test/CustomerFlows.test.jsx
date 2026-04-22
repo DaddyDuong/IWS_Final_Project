@@ -82,4 +82,32 @@ describe('Customer flow interactions', () => {
 
     expect(await screen.findByText(/your cart is empty/i)).toBeInTheDocument()
   })
+
+  it('treats unchanged cart quantity as valid no-op', async () => {
+    mockedFetchCart.mockResolvedValueOnce([
+      {
+        id: 'cart-item-1',
+        productId: 'product-1',
+        quantity: 2,
+        product: {
+          id: 'product-1',
+          name: 'MacBook Air 13',
+          brand: 'Apple',
+          price: 32990000,
+          stockQty: 12,
+          imageUrl: 'https://example.com/laptop.png',
+        },
+      },
+    ])
+
+    renderCartPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: /update/i }))
+
+    await waitFor(() => {
+      expect(mockedUpdateCartItem).not.toHaveBeenCalled()
+    })
+
+    expect(await screen.findByText(/quantity is unchanged/i)).toBeInTheDocument()
+  })
 })

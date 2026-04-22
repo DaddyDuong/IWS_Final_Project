@@ -82,7 +82,7 @@ export function AddressesPage() {
   const [newAddress, setNewAddress] = useState(initialAddressForm)
   const [editingId, setEditingId] = useState('')
   const [editingAddress, setEditingAddress] = useState(initialAddressForm)
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState({ message: '', type: 'success' })
 
   const addressesQuery = useQuery({
     queryKey: ['addresses'],
@@ -92,35 +92,44 @@ export function AddressesPage() {
   const createMutation = useMutation({
     mutationFn: createAddress,
     onSuccess: () => {
-      setFeedback('Address saved.')
+      setFeedback({ message: 'Address saved.', type: 'success' })
       setNewAddress(initialAddressForm)
       queryClient.invalidateQueries({ queryKey: ['addresses'] })
     },
     onError: (error) => {
-      setFeedback(formatApiError(error, 'Unable to save this address.'))
+      setFeedback({
+        message: formatApiError(error, 'Unable to save this address.'),
+        type: 'error',
+      })
     },
   })
 
   const updateMutation = useMutation({
     mutationFn: updateAddress,
     onSuccess: () => {
-      setFeedback('Address updated.')
+      setFeedback({ message: 'Address updated.', type: 'success' })
       setEditingId('')
       queryClient.invalidateQueries({ queryKey: ['addresses'] })
     },
     onError: (error) => {
-      setFeedback(formatApiError(error, 'Unable to update this address.'))
+      setFeedback({
+        message: formatApiError(error, 'Unable to update this address.'),
+        type: 'error',
+      })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: deleteAddress,
     onSuccess: () => {
-      setFeedback('Address removed.')
+      setFeedback({ message: 'Address removed.', type: 'success' })
       queryClient.invalidateQueries({ queryKey: ['addresses'] })
     },
     onError: (error) => {
-      setFeedback(formatApiError(error, 'Unable to delete this address.'))
+      setFeedback({
+        message: formatApiError(error, 'Unable to delete this address.'),
+        type: 'error',
+      })
     },
   })
 
@@ -171,7 +180,15 @@ export function AddressesPage() {
       <p className="eyebrow">Addresses</p>
       <h1 id="addresses-title">Saved addresses</h1>
 
-      {feedback ? <p className="catalog-feedback">{feedback}</p> : null}
+      {feedback.message ? (
+        <p
+          className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+        >
+          {feedback.message}
+        </p>
+      ) : null}
 
       <article className="customer-card">
         <h2>Add a new address</h2>
@@ -183,7 +200,11 @@ export function AddressesPage() {
         </form>
       </article>
 
-      {addressesQuery.isLoading ? <p>Loading addresses...</p> : null}
+      {addressesQuery.isLoading ? (
+        <p role="status" aria-live="polite">
+          Loading addresses...
+        </p>
+      ) : null}
 
       {addressesQuery.isError ? (
         <p className="catalog-feedback catalog-feedback--error">

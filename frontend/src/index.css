@@ -403,6 +403,12 @@ a {
   background: rgba(168, 36, 36, 0.06);
 }
 
+.catalog-feedback--success {
+  color: #0d7d3e;
+  border-color: rgba(13, 125, 62, 0.24);
+  background: rgba(13, 125, 62, 0.08);
+}
+
 .pagination-bar {
   display: flex;
   gap: 12px;

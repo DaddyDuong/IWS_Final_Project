@@ -7,7 +7,7 @@ import { currencyFormatter, formatApiError } from '../lib/formatters'
 export function CartPage() {
   const queryClient = useQueryClient()
   const [draftQuantities, setDraftQuantities] = useState({})
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState({ message: '', type: 'success' })
 
   const cartQuery = useQuery({
     queryKey: ['cart'],
@@ -17,23 +17,29 @@ export function CartPage() {
   const updateItemMutation = useMutation({
     mutationFn: updateCartItem,
     onSuccess: () => {
-      setFeedback('Cart item updated.')
+      setFeedback({ message: 'Cart item updated.', type: 'success' })
       setDraftQuantities({})
       queryClient.invalidateQueries({ queryKey: ['cart'] })
     },
     onError: (error) => {
-      setFeedback(formatApiError(error, 'Unable to update this cart item.'))
+      setFeedback({
+        message: formatApiError(error, 'Unable to update this cart item.'),
+        type: 'error',
+      })
     },
   })
 
   const removeItemMutation = useMutation({
     mutationFn: removeCartItem,
     onSuccess: () => {
-      setFeedback('Item removed from cart.')
+      setFeedback({ message: 'Item removed from cart.', type: 'success' })
       queryClient.invalidateQueries({ queryKey: ['cart'] })
     },
     onError: (error) => {
-      setFeedback(formatApiError(error, 'Unable to remove this cart item.'))
+      setFeedback({
+        message: formatApiError(error, 'Unable to remove this cart item.'),
+        type: 'error',
+      })
     },
   })
 
@@ -49,10 +55,17 @@ export function CartPage() {
   }
 
   function handleUpdate(itemId) {
-    const nextQuantity = Number.parseInt(draftQuantities[itemId] || '0', 10)
+    const item = items.find((entry) => entry.id === itemId)
+    const fallbackQuantity = item?.quantity ?? 1
+    const nextQuantity = Number.parseInt(draftQuantities[itemId] ?? String(fallbackQuantity), 10)
 
     if (!Number.isInteger(nextQuantity) || nextQuantity < 1) {
-      setFeedback('Quantity must be at least 1.')
+      setFeedback({ message: 'Quantity must be at least 1.', type: 'error' })
+      return
+    }
+
+    if (item && nextQuantity === item.quantity) {
+      setFeedback({ message: 'Quantity is unchanged.', type: 'success' })
       return
     }
 
@@ -64,9 +77,21 @@ export function CartPage() {
       <p className="eyebrow">Cart</p>
       <h1 id="cart-title">Your cart</h1>
 
-      {feedback ? <p className="catalog-feedback">{feedback}</p> : null}
+      {feedback.message ? (
+        <p
+          className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+        >
+          {feedback.message}
+        </p>
+      ) : null}
 
-      {cartQuery.isLoading ? <p>Loading cart...</p> : null}
+      {cartQuery.isLoading ? (
+        <p role="status" aria-live="polite">
+          Loading cart...
+        </p>
+      ) : null}
 
       {cartQuery.isError ? (
         <p className="catalog-feedback catalog-feedback--error">
