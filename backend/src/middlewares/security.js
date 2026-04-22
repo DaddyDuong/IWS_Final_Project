@@ -1,13 +1,9 @@
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { env } from '../config/env.js';
 
-const allowedOrigins = new Set(['http://localhost:5173']);
-
-function parsePositiveInt(value, fallback) {
-  const parsed = Number.parseInt(value ?? '', 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-}
+const allowedOrigins = new Set(env.security.corsAllowedOrigins);
 
 function rateLimitHandler(_req, _res, next) {
   next({
@@ -16,11 +12,6 @@ function rateLimitHandler(_req, _res, next) {
     message: 'Too many requests, please try again later.',
   });
 }
-
-const globalWindowMs = parsePositiveInt(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000);
-const globalMax = parsePositiveInt(process.env.GLOBAL_RATE_LIMIT_MAX, 200);
-const authWindowMs = parsePositiveInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000);
-const authMax = parsePositiveInt(process.env.AUTH_RATE_LIMIT_MAX, 100);
 
 export const helmetMiddleware = helmet();
 
@@ -38,16 +29,16 @@ export const corsMiddleware = cors({
 });
 
 export const globalRateLimiter = rateLimit({
-  windowMs: globalWindowMs,
-  max: globalMax,
+  windowMs: env.security.rateLimit.global.windowMs,
+  max: env.security.rateLimit.global.max,
   standardHeaders: true,
   legacyHeaders: false,
   handler: rateLimitHandler,
 });
 
 export const authRateLimiter = rateLimit({
-  windowMs: authWindowMs,
-  max: authMax,
+  windowMs: env.security.rateLimit.auth.windowMs,
+  max: env.security.rateLimit.auth.max,
   standardHeaders: true,
   legacyHeaders: false,
   handler: rateLimitHandler,

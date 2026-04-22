@@ -65,6 +65,18 @@ describe('auth endpoints', () => {
     );
   });
 
+  it('does not globally sanitize auth input fields', async () => {
+    const res = await request(app).post('/api/v1/auth/register').send({
+      email: 'preserve@example.com',
+      password: 'strong-password',
+      fullName: '  Alice <Admin>  ',
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.fullName).toBe('  Alice <Admin>  ');
+  });
+
   it('logs in with valid credentials and returns jwt token', async () => {
     await request(app).post('/api/v1/auth/register').send({
       email: 'bob@example.com',

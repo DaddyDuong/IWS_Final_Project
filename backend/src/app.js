@@ -7,6 +7,7 @@ import { ordersRoutes } from './routes/orders.routes.js';
 import { productsRoutes } from './routes/products.routes.js';
 import { reviewsRoutes } from './routes/reviews.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
+import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.js';
 import {
   authRateLimiter,
@@ -14,15 +15,14 @@ import {
   globalRateLimiter,
   helmetMiddleware,
 } from './middlewares/security.js';
-import { sanitizeRequestTextFields } from './middlewares/sanitize.js';
 
 export const app = express();
+app.set('trust proxy', env.security.trustProxy);
 
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
 app.use(globalRateLimiter);
 app.use(express.json());
-app.use(sanitizeRequestTextFields);
 
 app.get('/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
