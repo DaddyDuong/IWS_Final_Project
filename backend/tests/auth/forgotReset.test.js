@@ -42,21 +42,39 @@ describe('forgot and reset password endpoints', () => {
   });
 
   beforeEach(async () => {
+    delete process.env.ENABLE_DEMO_RESET_TOKEN;
     await prisma.passwordResetToken.deleteMany();
     await prisma.user.deleteMany();
   });
 
-  it('resets password with issued demo token', async () => {
+  it('does not return demo reset token when demo flag is disabled', async () => {
+    await request(app).post('/api/v1/auth/register').send({
+      email: 'hidden-token@example.com',
+      password: 'old-password-123',
+      fullName: 'Hidden Token',
+    });
+
+    const forgotRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'hidden-token@example.com',
+    });
+
+    expect(forgotRes.status).toBe(200);
+    expect(forgotRes.body.success).toBe(true);
+    expect(forgotRes.body.data.demoResetToken).toBeUndefined();
+  });
+
+  it('resets password with issued demo token when demo flag is enabled', async () => {
+    process.env.ENABLE_DEMO_RESET_TOKEN = 'true';
+
     await request(app).post('/api/v1/auth/register').send({
       email: 'resettable@example.com',
       password: 'old-password-123',
       fullName: 'Reset Table',
     });
 
-    const forgotRes = await request(app)
-      .post('/api/v1/auth/forgot-password')
-      .set('Host', 'localhost')
-      .send({ email: 'resettable@example.com' });
+    const forgotRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'resettable@example.com',
+    });
 
     expect(forgotRes.status).toBe(200);
     expect(forgotRes.body.success).toBe(true);
@@ -90,6 +108,53 @@ describe('forgot and reset password endpoints', () => {
 
     const usedToken = await prisma.passwordResetToken.findFirst();
     expect(usedToken.usedAt).not.toBeNull();
+  });
+
+  it('invalidates all other active tokens after successful reset', async () => {
+    process.env.ENABLE_DEMO_RESET_TOKEN = 'true';
+
+    await request(app).post('/api/v1/auth/register').send({
+      email: 'multi-token@example.com',
+      password: 'old-password-123',
+      fullName: 'Multi Token',
+    });
+
+    const firstForgotRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'multi-token@example.com',
+    });
+    const secondForgotRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'multi-token@example.com',
+    });
+
+    const firstToken = firstForgotRes.body.data.demoResetToken;
+    const secondToken = secondForgotRes.body.data.demoResetToken;
+
+    expect(firstToken).toEqual(expect.any(String));
+    expect(secondToken).toEqual(expect.any(String));
+
+    const firstResetRes = await request(app).post('/api/v1/auth/reset-password').send({
+      token: firstToken,
+      newPassword: 'new-password-123',
+    });
+
+    expect(firstResetRes.status).toBe(200);
+    expect(firstResetRes.body.success).toBe(true);
+
+    const secondResetRes = await request(app).post('/api/v1/auth/reset-password').send({
+      token: secondToken,
+      newPassword: 'another-password-123',
+    });
+
+    expect(secondResetRes.status).toBe(400);
+    expect(secondResetRes.body.success).toBe(false);
+
+    const activeTokens = await prisma.passwordResetToken.findMany({
+      where: {
+        user: { email: 'multi-token@example.com' },
+        usedAt: null,
+      },
+    });
+    expect(activeTokens).toHaveLength(0);
   });
 
   it('rejects reset for invalid token', async () => {

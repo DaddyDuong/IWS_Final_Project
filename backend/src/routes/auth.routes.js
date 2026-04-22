@@ -35,8 +35,8 @@ const resetPasswordSchema = z.object({
 const forgotPasswordSuccessMessage =
   'If an account with that email exists, password reset instructions have been sent.';
 
-function isLocalhostRequest(hostname) {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+function isDemoResetTokenEnabled() {
+  return process.env.ENABLE_DEMO_RESET_TOKEN === 'true';
 }
 
 function toPublicUser(user) {
@@ -122,7 +122,7 @@ authRoutes.post('/login', validateBody(loginSchema), async (req, res, next) => {
   });
 });
 
-authRoutes.post('/forgot-password', validateBody(forgotPasswordSchema), async (req, res, next) => {
+authRoutes.post('/forgot-password', validateBody(forgotPasswordSchema), async (req, res) => {
   const { email } = req.validatedBody;
   const user = await prisma.user.findUnique({ where: { email } });
   const data = { message: forgotPasswordSuccessMessage };
@@ -141,7 +141,7 @@ authRoutes.post('/forgot-password', validateBody(forgotPasswordSchema), async (r
     },
   });
 
-  if (isLocalhostRequest(req.hostname)) {
+  if (isDemoResetTokenEnabled()) {
     data.demoResetToken = token;
   }
 
@@ -174,9 +174,14 @@ authRoutes.post('/reset-password', validateBody(resetPasswordSchema), async (req
   const passwordHash = await bcrypt.hash(newPassword, 10);
 
   await prisma.$transaction(async (tx) => {
-    const updatedToken = await tx.passwordResetToken.updateMany({
+    await tx.user.update({
+      where: { id: passwordResetToken.userId },
+      data: { passwordHash },
+    });
+
+    const invalidatedTokens = await tx.passwordResetToken.updateMany({
       where: {
-        id: passwordResetToken.id,
+        userId: passwordResetToken.userId,
         usedAt: null,
         expiresAt: {
           gt: now,
@@ -187,17 +192,12 @@ authRoutes.post('/reset-password', validateBody(resetPasswordSchema), async (req
       },
     });
 
-    if (updatedToken.count !== 1) {
+    if (invalidatedTokens.count < 1) {
       throw Object.assign(new Error('Invalid or expired reset token'), {
         status: 400,
         code: 'INVALID_RESET_TOKEN',
       });
     }
-
-    await tx.user.update({
-      where: { id: passwordResetToken.userId },
-      data: { passwordHash },
-    });
   });
 
   return res.json({
