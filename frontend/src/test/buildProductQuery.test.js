@@ -80,4 +80,15 @@ describe('updateSearchParamsWithQuery', () => {
 
     expect(nextParams.toString()).toBe('brand=ASUS')
   })
+
+  it('canonicalizes invalid values while merging patch', () => {
+    const baseParams = new URLSearchParams('page=-2&limit=500&sortBy=stockQty&inStock=yes&brand=  Apple  ')
+    const nextParams = updateSearchParamsWithQuery(baseParams, {
+      q: '  gaming  ',
+      page: '2',
+      limit: '24',
+    })
+
+    expect(nextParams.toString()).toBe('page=2&limit=24&q=gaming&brand=Apple')
+  })
 })

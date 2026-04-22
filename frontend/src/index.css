@@ -313,9 +313,16 @@ a {
 }
 
 .products-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.products-grid__item {
+  display: block;
 }
 
 .product-card {

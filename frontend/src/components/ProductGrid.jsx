@@ -8,27 +8,35 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 
 function ProductCard({ product }) {
   return (
-    <article className="product-card">
-      <div className="product-card__media">
-        <img src={product.imageUrl} alt={product.name} loading="lazy" />
-      </div>
-      <div className="product-card__body">
-        <p className="eyebrow">{product.brand}</p>
-        <h2>{product.name}</h2>
-        <p className="product-specs">
-          {product.cpu} - {product.ramGb}GB RAM - {product.storageGb}GB SSD
-        </p>
-        <div className="product-card__footer">
-          <strong>{currencyFormatter.format(product.price)}</strong>
-          <span className={product.stockQty > 0 ? 'stock stock--available' : 'stock stock--empty'}>
-            {product.stockQty > 0 ? `${product.stockQty} in stock` : 'Out of stock'}
-          </span>
+    <li className="products-grid__item">
+      <article className="product-card">
+        <div className="product-card__media">
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
+            width="640"
+            height="480"
+          />
         </div>
-        <Link className="button button--primary" to={`/products/${product.id}`}>
-          View details
-        </Link>
-      </div>
-    </article>
+        <div className="product-card__body">
+          <p className="eyebrow">{product.brand}</p>
+          <h2>{product.name}</h2>
+          <p className="product-specs">
+            {product.cpu} - {product.ramGb}GB RAM - {product.storageGb}GB SSD
+          </p>
+          <div className="product-card__footer">
+            <strong>{currencyFormatter.format(product.price)}</strong>
+            <span className={product.stockQty > 0 ? 'stock stock--available' : 'stock stock--empty'}>
+              {product.stockQty > 0 ? `${product.stockQty} in stock` : 'Out of stock'}
+            </span>
+          </div>
+          <Link className="button button--primary" to={`/products/${product.id}`}>
+            View details
+          </Link>
+        </div>
+      </article>
+    </li>
   )
 }
 
@@ -54,11 +62,11 @@ export function ProductGrid({ products, meta, isLoading, isError, error, isFetch
 
   return (
     <>
-      <div className="products-grid" role="list" aria-label="Product catalog">
+      <ul className="products-grid" aria-label="Product catalog">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
-      </div>
+      </ul>
 
       <div className="pagination-bar" aria-live="polite">
         <button

@@ -106,6 +106,60 @@ export function buildProductQuery(searchParams) {
   return query
 }
 
+export function buildSearchParamsFromProductQuery(query) {
+  const nextParams = new URLSearchParams()
+
+  if (query.page > DEFAULT_PAGE) {
+    nextParams.set('page', String(query.page))
+  }
+
+  if (query.limit !== DEFAULT_LIMIT) {
+    nextParams.set('limit', String(query.limit))
+  }
+
+  if (query.sortBy !== DEFAULT_SORT_BY) {
+    nextParams.set('sortBy', query.sortBy)
+  }
+
+  if (query.sortOrder !== DEFAULT_SORT_ORDER) {
+    nextParams.set('sortOrder', query.sortOrder)
+  }
+
+  if (query.q) {
+    nextParams.set('q', query.q)
+  }
+
+  if (query.brand) {
+    nextParams.set('brand', query.brand)
+  }
+
+  if (query.cpu) {
+    nextParams.set('cpu', query.cpu)
+  }
+
+  if (query.ram !== undefined) {
+    nextParams.set('ram', String(query.ram))
+  }
+
+  if (query.storage !== undefined) {
+    nextParams.set('storage', String(query.storage))
+  }
+
+  if (query.minPrice !== undefined) {
+    nextParams.set('minPrice', String(query.minPrice))
+  }
+
+  if (query.maxPrice !== undefined) {
+    nextParams.set('maxPrice', String(query.maxPrice))
+  }
+
+  if (query.inStock !== undefined) {
+    nextParams.set('inStock', String(query.inStock))
+  }
+
+  return nextParams
+}
+
 function shouldDropValue(value) {
   if (value === undefined || value === null) {
     return true
@@ -119,32 +173,17 @@ function shouldDropValue(value) {
 }
 
 export function updateSearchParamsWithQuery(baseSearchParams, patch) {
-  const nextParams = new URLSearchParams(baseSearchParams)
+  const mergedParams = new URLSearchParams(baseSearchParams)
 
   for (const [key, rawValue] of Object.entries(patch)) {
     if (shouldDropValue(rawValue)) {
-      nextParams.delete(key)
+      mergedParams.delete(key)
       continue
     }
 
-    nextParams.set(key, String(rawValue).trim())
+    mergedParams.set(key, String(rawValue).trim())
   }
 
-  if (nextParams.get('page') === String(DEFAULT_PAGE)) {
-    nextParams.delete('page')
-  }
-
-  if (nextParams.get('limit') === String(DEFAULT_LIMIT)) {
-    nextParams.delete('limit')
-  }
-
-  if (nextParams.get('sortBy') === DEFAULT_SORT_BY) {
-    nextParams.delete('sortBy')
-  }
-
-  if (nextParams.get('sortOrder') === DEFAULT_SORT_ORDER) {
-    nextParams.delete('sortOrder')
-  }
-
-  return nextParams
+  const sanitizedQuery = buildProductQuery(mergedParams)
+  return buildSearchParamsFromProductQuery(sanitizedQuery)
 }

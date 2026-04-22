@@ -1,10 +1,14 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { ProductFilters } from '../components/ProductFilters'
 import { ProductGrid } from '../components/ProductGrid'
 import { apiClient } from '../lib/apiClient'
-import { buildProductQuery, updateSearchParamsWithQuery } from '../lib/buildProductQuery'
+import {
+  buildProductQuery,
+  buildSearchParamsFromProductQuery,
+  updateSearchParamsWithQuery,
+} from '../lib/buildProductQuery'
 
 async function fetchProducts(query) {
   const response = await apiClient.get('/products', {
@@ -17,6 +21,13 @@ async function fetchProducts(query) {
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const query = useMemo(() => buildProductQuery(searchParams), [searchParams])
+
+  useEffect(() => {
+    const canonicalParams = buildSearchParamsFromProductQuery(query)
+    if (canonicalParams.toString() !== searchParams.toString()) {
+      setSearchParams(canonicalParams, { replace: true })
+    }
+  }, [query, searchParams, setSearchParams])
 
   const productsQuery = useQuery({
     queryKey: ['products', query],

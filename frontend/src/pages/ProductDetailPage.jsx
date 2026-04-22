@@ -52,7 +52,7 @@ export function ProductDetailPage() {
 
       <div className="product-detail-grid">
         <div className="product-detail-media">
-          <img src={product.imageUrl} alt={product.name} />
+          <img src={product.imageUrl} alt={product.name} width="960" height="720" />
         </div>
 
         <div className="product-detail-content">
