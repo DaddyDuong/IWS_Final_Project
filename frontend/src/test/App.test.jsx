@@ -5,15 +5,29 @@ import { MemoryRouter } from 'react-router-dom'
 import App from '../App.jsx'
 import { useAuthStore } from '../stores/authStore'
 
-const { mockedFetchOrders } = vi.hoisted(() => ({
+const {
+  mockedFetchAddresses,
+  mockedFetchCart,
+  mockedFetchOrderById,
+  mockedFetchOrders,
+  mockedFetchProfile,
+} = vi.hoisted(() => ({
+  mockedFetchAddresses: vi.fn(),
+  mockedFetchCart: vi.fn(),
+  mockedFetchOrderById: vi.fn(),
   mockedFetchOrders: vi.fn(),
+  mockedFetchProfile: vi.fn(),
 }))
 
 vi.mock('../lib/customerApi', async () => {
   const actual = await vi.importActual('../lib/customerApi')
   return {
     ...actual,
+    fetchAddresses: mockedFetchAddresses,
+    fetchCart: mockedFetchCart,
+    fetchOrderById: mockedFetchOrderById,
     fetchOrders: mockedFetchOrders,
+    fetchProfile: mockedFetchProfile,
   }
 })
 
@@ -45,7 +59,11 @@ describe('App routing shell', () => {
   beforeEach(() => {
     localStorage.clear()
     useAuthStore.getState().clearAuth()
+    mockedFetchAddresses.mockReset()
+    mockedFetchCart.mockReset()
+    mockedFetchOrderById.mockReset()
     mockedFetchOrders.mockReset()
+    mockedFetchProfile.mockReset()
   })
 
   it('renders home route content with app navigation', () => {
@@ -83,5 +101,89 @@ describe('App routing shell', () => {
 
     expect(await screen.findByRole('heading', { name: /order history/i })).toBeInTheDocument()
     expect(mockedFetchOrders).toHaveBeenCalled()
+  })
+
+  it('renders cart route when authenticated', async () => {
+    useAuthStore.getState().setToken(createValidToken())
+    mockedFetchCart.mockResolvedValueOnce([])
+
+    renderApp(['/cart'])
+
+    expect(await screen.findByRole('heading', { name: /your cart/i })).toBeInTheDocument()
+    expect(mockedFetchCart).toHaveBeenCalled()
+  })
+
+  it('renders checkout route when authenticated', async () => {
+    useAuthStore.getState().setToken(createValidToken())
+    mockedFetchCart.mockResolvedValueOnce([])
+    mockedFetchAddresses.mockResolvedValueOnce([])
+
+    renderApp(['/checkout'])
+
+    expect(await screen.findByRole('heading', { name: /checkout/i })).toBeInTheDocument()
+    expect(mockedFetchCart).toHaveBeenCalled()
+    expect(mockedFetchAddresses).toHaveBeenCalled()
+  })
+
+  it('renders profile route when authenticated', async () => {
+    useAuthStore.getState().setToken(createValidToken())
+    mockedFetchProfile.mockResolvedValueOnce({
+      id: 'user-1',
+      fullName: 'Taylor Customer',
+      email: 'taylor@example.com',
+      phone: '0900000000',
+    })
+
+    renderApp(['/profile'])
+
+    expect(await screen.findByRole('heading', { name: /your profile/i })).toBeInTheDocument()
+    expect(mockedFetchProfile).toHaveBeenCalled()
+  })
+
+  it('renders order detail route when authenticated', async () => {
+    useAuthStore.getState().setToken(createValidToken())
+    mockedFetchOrderById.mockResolvedValueOnce({
+      id: 'order-12345678',
+      status: 'pending',
+      placedAt: '2026-04-22T06:00:00.000Z',
+      subtotal: 32990000,
+      shippingFee: 0,
+      total: 32990000,
+      address: {
+        receiver: 'Taylor Customer',
+        phone: '0900000000',
+        line1: '1 Infinite Loop',
+        ward: 'Ward 1',
+        district: 'District 1',
+        city: 'Ho Chi Minh City',
+      },
+      items: [
+        {
+          id: 'item-1',
+          quantity: 1,
+          lineTotal: 32990000,
+          product: {
+            id: 'product-1',
+            name: 'MacBook Air 13',
+            imageUrl: 'https://example.com/laptop.png',
+          },
+        },
+      ],
+    })
+
+    renderApp(['/profile/orders/order-12345678'])
+
+    expect(await screen.findByRole('heading', { name: /order #order-12/i })).toBeInTheDocument()
+    expect(mockedFetchOrderById).toHaveBeenCalledWith('order-12345678')
+  })
+
+  it('renders addresses route when authenticated', async () => {
+    useAuthStore.getState().setToken(createValidToken())
+    mockedFetchAddresses.mockResolvedValueOnce([])
+
+    renderApp(['/profile/addresses'])
+
+    expect(await screen.findByRole('heading', { name: /saved addresses/i })).toBeInTheDocument()
+    expect(mockedFetchAddresses).toHaveBeenCalled()
   })
 })
