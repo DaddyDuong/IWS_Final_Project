@@ -50,7 +50,7 @@ async function createUserWithToken(emailPrefix) {
   };
 }
 
-async function createProduct(suffix) {
+async function createProduct(suffix, overrides = {}) {
   return prisma.product.create({
     data: {
       sku: `CART-${suffix}-${Date.now()}`,
@@ -64,6 +64,7 @@ async function createProduct(suffix) {
       stockQty: 20,
       description: `Cart test product ${suffix}`,
       imageUrl: `https://example.com/cart-${suffix}.jpg`,
+      ...overrides,
     },
   });
 }
@@ -177,6 +178,160 @@ describe('cart CRUD routes', () => {
 
     const remainingItems = await prisma.cartItem.findMany();
     expect(remainingItems).toHaveLength(0);
+  });
+
+  it('returns 404 when adding missing product to cart', async () => {
+    const { authHeader } = await createUserWithToken('missing-product');
+
+    const res = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: 'missing-product-id', quantity: 1 });
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('rejects add when product is unavailable (soft-deleted or out-of-stock)', async () => {
+    const { authHeader } = await createUserWithToken('unavailable-product');
+    const outOfStockProduct = await createProduct('out-of-stock', { stockQty: 0 });
+    const softDeletedProduct = await createProduct('soft-deleted', { isDeleted: true });
+
+    const outOfStockRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: outOfStockProduct.id, quantity: 1 });
+
+    expect(outOfStockRes.status).toBe(409);
+    expect(outOfStockRes.body.success).toBe(false);
+    expect(outOfStockRes.body.error.code).toBe('CART_PRODUCT_UNAVAILABLE');
+
+    const softDeletedRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: softDeletedProduct.id, quantity: 1 });
+
+    expect(softDeletedRes.status).toBe(409);
+    expect(softDeletedRes.body.success).toBe(false);
+    expect(softDeletedRes.body.error.code).toBe('CART_PRODUCT_UNAVAILABLE');
+  });
+
+  it('rejects add when requested or accumulated quantity exceeds stock', async () => {
+    const { authHeader } = await createUserWithToken('stock-add');
+    const product = await createProduct('stock-add', { stockQty: 5 });
+
+    const overRequestRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: product.id, quantity: 6 });
+
+    expect(overRequestRes.status).toBe(409);
+    expect(overRequestRes.body.success).toBe(false);
+    expect(overRequestRes.body.error.code).toBe('CART_STOCK_EXCEEDED');
+
+    const firstAddRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: product.id, quantity: 3 });
+
+    expect(firstAddRes.status).toBe(201);
+
+    const accumulatedOverRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: product.id, quantity: 3 });
+
+    expect(accumulatedOverRes.status).toBe(409);
+    expect(accumulatedOverRes.body.success).toBe(false);
+    expect(accumulatedOverRes.body.error.code).toBe('CART_STOCK_EXCEEDED');
+  });
+
+  it('rejects patch when quantity exceeds stock', async () => {
+    const { user, authHeader } = await createUserWithToken('stock-patch');
+    const product = await createProduct('stock-patch', { stockQty: 3 });
+
+    const item = await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        quantity: 1,
+      },
+    });
+
+    const patchRes = await request(app)
+      .patch(`/api/v1/cart/items/${item.id}`)
+      .set('Authorization', authHeader)
+      .send({ quantity: 4 });
+
+    expect(patchRes.status).toBe(409);
+    expect(patchRes.body.success).toBe(false);
+    expect(patchRes.body.error.code).toBe('CART_STOCK_EXCEEDED');
+  });
+
+  it('returns only current user items in GET /cart', async () => {
+    const { user: owner, authHeader: ownerToken } = await createUserWithToken('owner-cart');
+    const { user: otherUser } = await createUserWithToken('other-cart');
+    const ownerProduct = await createProduct('owner-item');
+    const otherProduct = await createProduct('other-item');
+
+    const ownerItem = await prisma.cartItem.create({
+      data: {
+        userId: owner.id,
+        productId: ownerProduct.id,
+        quantity: 2,
+      },
+    });
+
+    await prisma.cartItem.create({
+      data: {
+        userId: otherUser.id,
+        productId: otherProduct.id,
+        quantity: 1,
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/cart')
+      .set('Authorization', ownerToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.items).toHaveLength(1);
+    expect(res.body.data.items[0]).toEqual(
+      expect.objectContaining({
+        id: ownerItem.id,
+        userId: owner.id,
+        productId: ownerProduct.id,
+      }),
+    );
+  });
+
+  it('rejects quantity above validation ceiling', async () => {
+    const { authHeader } = await createUserWithToken('quantity-ceiling');
+    const product = await createProduct('quantity-ceiling');
+
+    const addRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: product.id, quantity: 101 });
+
+    expect(addRes.status).toBe(400);
+    expect(addRes.body.success).toBe(false);
+
+    const validAddRes = await request(app)
+      .post('/api/v1/cart/items')
+      .set('Authorization', authHeader)
+      .send({ productId: product.id, quantity: 1 });
+
+    expect(validAddRes.status).toBe(201);
+
+    const patchRes = await request(app)
+      .patch(`/api/v1/cart/items/${validAddRes.body.data.id}`)
+      .set('Authorization', authHeader)
+      .send({ quantity: 101 });
+
+    expect(patchRes.status).toBe(400);
+    expect(patchRes.body.success).toBe(false);
   });
 
   it('prevents cross-user update and delete mutations', async () => {

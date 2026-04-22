@@ -6,11 +6,11 @@ import { validateBody } from '../middlewares/validate.js';
 
 const addCartItemSchema = z.object({
   productId: z.string().trim().min(1),
-  quantity: z.number().int().positive(),
+  quantity: z.number().int().positive().max(100),
 });
 
 const updateCartItemSchema = z.object({
-  quantity: z.number().int().positive(),
+  quantity: z.number().int().positive().max(100),
 });
 
 const cartItemSelect = {
@@ -58,16 +58,19 @@ cartRoutes.get('/', async (req, res) => {
 cartRoutes.post('/items', validateBody(addCartItemSchema), async (req, res, next) => {
   const { productId, quantity } = req.validatedBody;
 
-  const product = await prisma.product.findFirst({
+  const product = await prisma.product.findUnique({
     where: {
       id: productId,
-      isDeleted: false,
     },
-    select: { id: true },
+    select: { id: true, isDeleted: true, stockQty: true },
   });
 
   if (!product) {
     return next({ status: 404, message: 'Product not found' });
+  }
+
+  if (product.isDeleted || product.stockQty <= 0) {
+    return next({ status: 409, code: 'CART_PRODUCT_UNAVAILABLE', message: 'Product unavailable' });
   }
 
   const existing = await prisma.cartItem.findUnique({
@@ -77,8 +80,14 @@ cartRoutes.post('/items', validateBody(addCartItemSchema), async (req, res, next
         productId,
       },
     },
-    select: { id: true },
+    select: { id: true, quantity: true },
   });
+
+  const nextQuantity = (existing?.quantity ?? 0) + quantity;
+
+  if (nextQuantity > product.stockQty) {
+    return next({ status: 409, code: 'CART_STOCK_EXCEEDED', message: 'Requested quantity exceeds stock' });
+  }
 
   const cartItem = await prisma.cartItem.upsert({
     where: {
@@ -93,9 +102,7 @@ cartRoutes.post('/items', validateBody(addCartItemSchema), async (req, res, next
       quantity,
     },
     update: {
-      quantity: {
-        increment: quantity,
-      },
+      quantity: nextQuantity,
     },
     select: cartItemSelect,
   });
@@ -107,6 +114,34 @@ cartRoutes.post('/items', validateBody(addCartItemSchema), async (req, res, next
 });
 
 cartRoutes.patch('/items/:id', validateBody(updateCartItemSchema), async (req, res, next) => {
+  const existingItem = await prisma.cartItem.findFirst({
+    where: {
+      id: req.params.id,
+      userId: req.authUser.id,
+    },
+    select: {
+      id: true,
+      product: {
+        select: {
+          isDeleted: true,
+          stockQty: true,
+        },
+      },
+    },
+  });
+
+  if (!existingItem) {
+    return next({ status: 404, message: 'Cart item not found' });
+  }
+
+  if (existingItem.product.isDeleted || existingItem.product.stockQty <= 0) {
+    return next({ status: 409, code: 'CART_PRODUCT_UNAVAILABLE', message: 'Product unavailable' });
+  }
+
+  if (req.validatedBody.quantity > existingItem.product.stockQty) {
+    return next({ status: 409, code: 'CART_STOCK_EXCEEDED', message: 'Requested quantity exceeds stock' });
+  }
+
   const updateResult = await prisma.cartItem.updateMany({
     where: {
       id: req.params.id,
