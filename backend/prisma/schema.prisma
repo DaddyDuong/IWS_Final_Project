@@ -6,13 +6,26 @@ datasource db {
   provider = "sqlite"
 }
 
+enum UserRole {
+  customer
+  manager
+}
+
+enum OrderStatus {
+  pending
+  processing
+  shipped
+  delivered
+  canceled
+}
+
 model User {
   id           String               @id @default(cuid())
   email        String               @unique
   passwordHash String               @map("password_hash")
   fullName     String               @map("full_name")
   phone        String?
-  role         String               @default("customer")
+  role         UserRole             @default(customer)
   createdAt    DateTime             @default(now()) @map("created_at")
   updatedAt    DateTime             @updatedAt @map("updated_at")
   resetTokens  PasswordResetToken[]
@@ -33,6 +46,7 @@ model PasswordResetToken {
   createdAt DateTime  @default(now()) @map("created_at")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("password_reset_tokens")
 }
 
@@ -69,6 +83,8 @@ model CartItem {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 
+  @@index([userId])
+  @@index([productId])
   @@unique([userId, productId])
   @@map("cart_items")
 }
@@ -88,6 +104,7 @@ model Address {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders    Order[]
 
+  @@index([userId])
   @@map("addresses")
 }
 
@@ -95,7 +112,7 @@ model Order {
   id          String      @id @default(cuid())
   userId      String      @map("user_id")
   addressId   String      @map("address_id")
-  status      String      @default("pending")
+  status      OrderStatus @default(pending)
   subtotal    Int
   shippingFee Int         @default(0) @map("shipping_fee")
   total       Int
@@ -106,6 +123,9 @@ model Order {
   address     Address     @relation(fields: [addressId], references: [id], onDelete: Restrict)
   items       OrderItem[]
 
+  @@index([userId])
+  @@index([addressId])
+  @@index([status])
   @@map("orders")
 }
 
@@ -119,6 +139,8 @@ model OrderItem {
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
@@ -133,6 +155,8 @@ model Review {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([productId])
   @@unique([userId, productId])
   @@map("reviews")
 }

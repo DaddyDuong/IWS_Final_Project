@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
-const adapter = new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' });
+const databaseUrl = process.env.DATABASE_URL ?? 'file:./prisma/dev.db';
+const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
 const sampleProducts = [
@@ -35,30 +36,39 @@ const sampleProducts = [
 ];
 
 async function main() {
-  const managerPasswordHash = await bcrypt.hash('Manager@123', 10);
-
-  await prisma.user.upsert({
-    where: { email: 'manager@laptop.local' },
-    update: {
-      passwordHash: managerPasswordHash,
-      fullName: 'Store Manager',
-      role: 'manager',
-    },
-    create: {
-      email: 'manager@laptop.local',
-      passwordHash: managerPasswordHash,
-      fullName: 'Store Manager',
-      role: 'manager',
-    },
-  });
-
-  for (const product of sampleProducts) {
-    await prisma.product.upsert({
-      where: { sku: product.sku },
-      update: product,
-      create: product,
+  await prisma.$transaction(async (tx) => {
+    const existingManager = await tx.user.findUnique({
+      where: { email: 'manager@laptop.local' },
     });
-  }
+
+    if (existingManager) {
+      await tx.user.update({
+        where: { email: 'manager@laptop.local' },
+        data: {
+          fullName: 'Store Manager',
+          role: 'manager',
+        },
+      });
+    } else {
+      const managerPasswordHash = await bcrypt.hash('Manager@123', 10);
+      await tx.user.create({
+        data: {
+          email: 'manager@laptop.local',
+          passwordHash: managerPasswordHash,
+          fullName: 'Store Manager',
+          role: 'manager',
+        },
+      });
+    }
+
+    for (const product of sampleProducts) {
+      await tx.product.upsert({
+        where: { sku: product.sku },
+        update: product,
+        create: product,
+      });
+    }
+  });
 }
 
 main()

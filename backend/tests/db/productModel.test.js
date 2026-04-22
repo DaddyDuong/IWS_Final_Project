@@ -1,12 +1,47 @@
-import { afterAll, describe, expect, it } from 'vitest';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import Database from 'better-sqlite3';
 
-const adapter = new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' });
-const prisma = new PrismaClient({ adapter });
+let tempDir;
+let prisma;
 const testSku = `LAP-TEST-${Date.now()}`;
 
+async function applySchemaToDatabase(dbPath) {
+  const migrationsDir = join(process.cwd(), 'prisma', 'migrations');
+  const entries = await readdir(migrationsDir, { withFileTypes: true });
+  const migrationDirs = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  const db = new Database(dbPath);
+  try {
+    for (const migrationDir of migrationDirs) {
+      const migrationSqlPath = join(migrationsDir, migrationDir, 'migration.sql');
+      const migrationSql = await readFile(migrationSqlPath, 'utf8');
+      db.exec(migrationSql);
+    }
+  } finally {
+    db.close();
+  }
+}
+
 describe('product model', () => {
+  beforeAll(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'laptop-retail-db-test-'));
+    const isolatedDbPath = join(tempDir, 'test.db');
+    await applySchemaToDatabase(isolatedDbPath);
+
+    const adapter = new PrismaBetterSqlite3({
+      url: `file:${isolatedDbPath}`,
+    });
+    prisma = new PrismaClient({ adapter });
+  });
+
   it('creates and reads a product', async () => {
     const created = await prisma.product.create({
       data: {
@@ -31,9 +66,14 @@ describe('product model', () => {
   });
 
   afterAll(async () => {
-    if (prisma.product) {
+    if (prisma?.product) {
       await prisma.product.deleteMany({ where: { sku: testSku } });
     }
-    await prisma.$disconnect();
+    if (prisma) {
+      await prisma.$disconnect();
+    }
+    if (tempDir) {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 });
