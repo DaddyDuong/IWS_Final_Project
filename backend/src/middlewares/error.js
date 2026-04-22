@@ -4,7 +4,7 @@ export function notFoundHandler(_req, _res, next) {
 
 export function errorHandler(err, _req, res, _next) {
   const status = err?.status ?? 500;
-  const message = err?.message ?? 'Internal server error';
+  const message = status >= 500 ? 'Internal server error' : (err?.message ?? 'Bad request');
   const response = {
     success: false,
     error: {
@@ -12,7 +12,11 @@ export function errorHandler(err, _req, res, _next) {
     },
   };
 
-  if (err?.details) {
+  if (err?.code) {
+    response.error.code = err.code;
+  }
+
+  if (status < 500 && err?.details) {
     response.error.details = err.details;
   }
 

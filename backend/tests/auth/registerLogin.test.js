@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import Database from 'better-sqlite3';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const isolatedDbPath = join(tmpdir(), `laptop-retail-auth-${Date.now()}.db`);
 
@@ -88,6 +88,48 @@ describe('auth endpoints', () => {
     );
   });
 
+  it('rejects duplicate register with 409 EMAIL_EXISTS', async () => {
+    const payload = {
+      email: 'dupe@example.com',
+      password: 'strong-password',
+      fullName: 'Dup User',
+    };
+
+    const first = await request(app).post('/api/v1/auth/register').send(payload);
+    const second = await request(app).post('/api/v1/auth/register').send(payload);
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(409);
+    expect(second.body.success).toBe(false);
+    expect(second.body.error.code).toBe('EMAIL_EXISTS');
+  });
+
+  it('rejects login when email is unknown', async () => {
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: 'unknown@example.com',
+      password: 'strong-password',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('rejects login when password is wrong', async () => {
+    await request(app).post('/api/v1/auth/register').send({
+      email: 'eve@example.com',
+      password: 'strong-password',
+      fullName: 'Eve Vu',
+    });
+
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: 'eve@example.com',
+      password: 'wrong-password',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
   it('returns current user for bearer token', async () => {
     const registerRes = await request(app).post('/api/v1/auth/register').send({
       email: 'carol@example.com',
@@ -116,6 +158,35 @@ describe('auth endpoints', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
+  });
+
+  it('rejects /users/me with malformed bearer token', async () => {
+    const res = await request(app)
+      .get('/api/v1/users/me')
+      .set('Authorization', 'Bearer malformed-token');
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns generic 500 error without leaking internals', async () => {
+    const originalFindUnique = prisma.user.findUnique;
+
+    prisma.user.findUnique = vi.fn(async () => {
+      throw new Error('database exploded with sensitive details');
+    });
+
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: 'any@example.com',
+      password: 'strong-password',
+    });
+
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe('Internal server error');
+    expect(JSON.stringify(res.body)).not.toContain('sensitive details');
+
+    prisma.user.findUnique = originalFindUnique;
   });
 
   afterAll(async () => {

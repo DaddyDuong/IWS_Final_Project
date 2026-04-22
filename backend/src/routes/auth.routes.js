@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
@@ -37,18 +38,32 @@ authRoutes.post('/register', validateBody(registerSchema), async (req, res, next
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {
-    return next({ status: 409, message: 'Email already in use' });
+    return next({ status: 409, code: 'EMAIL_EXISTS', message: 'Email already in use' });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      phone,
-    },
-  });
+  let user;
+
+  try {
+    user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        phone,
+      },
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError
+      && err.code === 'P2002'
+      && Array.isArray(err.meta?.target)
+      && err.meta.target.includes('email')
+    ) {
+      return next({ status: 409, code: 'EMAIL_EXISTS', message: 'Email already in use' });
+    }
+    return next(err);
+  }
 
   const token = signAuthToken({ sub: user.id, role: user.role });
 
