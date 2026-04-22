@@ -8,17 +8,28 @@ import { productsRoutes } from './routes/products.routes.js';
 import { reviewsRoutes } from './routes/reviews.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.js';
+import {
+  authRateLimiter,
+  corsMiddleware,
+  globalRateLimiter,
+  helmetMiddleware,
+} from './middlewares/security.js';
+import { sanitizeRequestTextFields } from './middlewares/sanitize.js';
 
 export const app = express();
 
 app.use(express.json());
+app.use(helmetMiddleware);
+app.use(corsMiddleware);
+app.use(globalRateLimiter);
+app.use(sanitizeRequestTextFields);
 
 app.get('/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
 });
 
 app.use('/api/v1/addresses', addressesRoutes);
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authRateLimiter, authRoutes);
 app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/orders', ordersRoutes);
 app.use('/api/v1/products', productsRoutes);

@@ -5,6 +5,7 @@ export function validateBody(schema) {
     if (!parsed.success) {
       return next({
         status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         details: parsed.error.flatten(),
       });
@@ -22,6 +23,7 @@ export function validateQuery(schema) {
     if (!parsed.success) {
       return next({
         status: 400,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         details: parsed.error.flatten(),
       });
