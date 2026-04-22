@@ -54,12 +54,38 @@ function toProductResponse(product) {
   };
 }
 
+function isSkuConflict(err) {
+  if (!err || typeof err !== 'object' || err.code !== 'P2002') {
+    return false;
+  }
+
+  if (Array.isArray(err.meta?.target)) {
+    return err.meta.target.length === 0 || err.meta.target.includes('sku');
+  }
+
+  if (!err.meta?.target) {
+    return true;
+  }
+
+  return `${err.meta.target}`.toLowerCase().includes('sku');
+}
+
 export const internalProductsRoutes = Router();
 
 internalProductsRoutes.use(requireAuth, requireRole('manager'));
 
-internalProductsRoutes.post('/', validateBody(createProductSchema), async (req, res) => {
-  const product = await prisma.product.create({ data: req.validatedBody });
+internalProductsRoutes.post('/', validateBody(createProductSchema), async (req, res, next) => {
+  let product;
+
+  try {
+    product = await prisma.product.create({ data: req.validatedBody });
+  } catch (err) {
+    if (isSkuConflict(err)) {
+      return next({ status: 409, code: 'SKU_EXISTS', message: 'SKU already exists' });
+    }
+
+    return next(err);
+  }
 
   return res.status(201).json({
     success: true,
@@ -68,21 +94,35 @@ internalProductsRoutes.post('/', validateBody(createProductSchema), async (req, 
 });
 
 internalProductsRoutes.patch('/:id', validateBody(updateProductSchema), async (req, res, next) => {
-  const existingProduct = await prisma.product.findFirst({
-    where: {
-      id: req.params.id,
-      isDeleted: false,
-    },
-  });
+  let updateResult;
 
-  if (!existingProduct) {
+  try {
+    updateResult = await prisma.product.updateMany({
+      where: {
+        id: req.params.id,
+        isDeleted: false,
+      },
+      data: req.validatedBody,
+    });
+  } catch (err) {
+    if (isSkuConflict(err)) {
+      return next({ status: 409, code: 'SKU_EXISTS', message: 'SKU already exists' });
+    }
+
+    return next(err);
+  }
+
+  if (updateResult.count === 0) {
     return next({ status: 404, message: 'Product not found' });
   }
 
-  const product = await prisma.product.update({
+  const product = await prisma.product.findUnique({
     where: { id: req.params.id },
-    data: req.validatedBody,
   });
+
+  if (!product) {
+    return next({ status: 404, message: 'Product not found' });
+  }
 
   return res.json({
     success: true,
@@ -91,21 +131,25 @@ internalProductsRoutes.patch('/:id', validateBody(updateProductSchema), async (r
 });
 
 internalProductsRoutes.delete('/:id', async (req, res, next) => {
-  const existingProduct = await prisma.product.findFirst({
+  const softDeleteResult = await prisma.product.updateMany({
     where: {
       id: req.params.id,
       isDeleted: false,
     },
+    data: { isDeleted: true },
   });
 
-  if (!existingProduct) {
+  if (softDeleteResult.count === 0) {
     return next({ status: 404, message: 'Product not found' });
   }
 
-  const product = await prisma.product.update({
+  const product = await prisma.product.findUnique({
     where: { id: req.params.id },
-    data: { isDeleted: true },
   });
+
+  if (!product) {
+    return next({ status: 404, message: 'Product not found' });
+  }
 
   return res.json({
     success: true,

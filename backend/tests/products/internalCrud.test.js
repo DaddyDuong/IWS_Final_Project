@@ -78,6 +78,143 @@ describe('internal product CRUD routes', () => {
     expect(res.body.success).toBe(false);
   });
 
+  it('returns 403 when non-manager updates product', async () => {
+    const customerToken = await buildAuthHeader('customer');
+    const product = await prisma.product.create({
+      data: {
+        sku: 'INT-NM-PATCH',
+        name: 'Patch Guard Product',
+        brand: 'GuardBrand',
+        cpu: 'Intel Core i5',
+        ramGb: 8,
+        storageGb: 256,
+        screenSize: '14',
+        price: 15000000,
+        stockQty: 4,
+        description: 'Used to verify patch role guard',
+        imageUrl: 'https://example.com/int-nm-patch.jpg',
+      },
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/internal/products/${product.id}`)
+      .set('Authorization', customerToken)
+      .send({ name: 'Should Not Update' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns 403 when non-manager deletes product', async () => {
+    const customerToken = await buildAuthHeader('customer');
+    const product = await prisma.product.create({
+      data: {
+        sku: 'INT-NM-DELETE',
+        name: 'Delete Guard Product',
+        brand: 'GuardBrand',
+        cpu: 'Intel Core i5',
+        ramGb: 8,
+        storageGb: 256,
+        screenSize: '14',
+        price: 15000000,
+        stockQty: 4,
+        description: 'Used to verify delete role guard',
+        imageUrl: 'https://example.com/int-nm-delete.jpg',
+      },
+    });
+
+    const res = await request(app)
+      .delete(`/api/v1/internal/products/${product.id}`)
+      .set('Authorization', customerToken);
+
+    expect(res.status).toBe(403);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns 409 SKU_EXISTS when manager creates duplicate sku', async () => {
+    const managerToken = await buildAuthHeader('manager');
+    await prisma.product.create({
+      data: {
+        sku: 'INT-DUP-CREATE',
+        name: 'Original SKU Product',
+        brand: 'BaseBrand',
+        cpu: 'Intel Core i5',
+        ramGb: 8,
+        storageGb: 256,
+        screenSize: '14',
+        price: 15000000,
+        stockQty: 4,
+        description: 'Initial record for duplicate create check',
+        imageUrl: 'https://example.com/int-dup-create-origin.jpg',
+      },
+    });
+
+    const res = await request(app)
+      .post('/api/v1/internal/products')
+      .set('Authorization', managerToken)
+      .send({
+        sku: 'INT-DUP-CREATE',
+        name: 'Duplicate SKU Product',
+        brand: 'DupBrand',
+        cpu: 'Intel Core i7',
+        ramGb: 16,
+        storageGb: 512,
+        screenSize: '15.6',
+        price: 24000000,
+        stockQty: 6,
+        description: 'Should fail with SKU_EXISTS',
+        imageUrl: 'https://example.com/int-dup-create.jpg',
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('SKU_EXISTS');
+  });
+
+  it('returns 409 SKU_EXISTS when manager updates sku to existing one', async () => {
+    const managerToken = await buildAuthHeader('manager');
+    const first = await prisma.product.create({
+      data: {
+        sku: 'INT-DUP-UPDATE-A',
+        name: 'First Product',
+        brand: 'BaseBrand',
+        cpu: 'Intel Core i5',
+        ramGb: 8,
+        storageGb: 256,
+        screenSize: '14',
+        price: 15000000,
+        stockQty: 4,
+        description: 'First record for duplicate update check',
+        imageUrl: 'https://example.com/int-dup-update-a.jpg',
+      },
+    });
+
+    await prisma.product.create({
+      data: {
+        sku: 'INT-DUP-UPDATE-B',
+        name: 'Second Product',
+        brand: 'BaseBrand',
+        cpu: 'Intel Core i7',
+        ramGb: 16,
+        storageGb: 512,
+        screenSize: '15.6',
+        price: 24000000,
+        stockQty: 6,
+        description: 'Second record owns target SKU',
+        imageUrl: 'https://example.com/int-dup-update-b.jpg',
+      },
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/internal/products/${first.id}`)
+      .set('Authorization', managerToken)
+      .send({ sku: 'INT-DUP-UPDATE-B' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('SKU_EXISTS');
+  });
+
   it('allows manager to create, update, and soft-delete product', async () => {
     const managerToken = await buildAuthHeader('manager');
     const createPayload = {
