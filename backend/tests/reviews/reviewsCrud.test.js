@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { signAuthToken } from '../../src/lib/jwt.js';
 
 const isolatedDbPath = join(tmpdir(), `laptop-retail-reviews-${Date.now()}.db`);
 
@@ -13,6 +12,7 @@ process.env.JWT_SECRET = 'reviews-test-secret';
 
 let app;
 let prisma;
+let signAuthToken;
 
 async function applySchemaToDatabase(dbPath) {
   const migrationsDir = join(process.cwd(), 'prisma', 'migrations');
@@ -72,6 +72,7 @@ async function createProduct(suffix, overrides = {}) {
 describe('reviews CRUD routes', () => {
   beforeAll(async () => {
     await applySchemaToDatabase(isolatedDbPath);
+    ({ signAuthToken } = await import('../../src/lib/jwt.js'));
     ({ app } = await import('../../src/app.js'));
     ({ prisma } = await import('../../src/lib/prisma.js'));
   });
@@ -96,6 +97,13 @@ describe('reviews CRUD routes', () => {
     expect(postRes.status).toBe(401);
     expect(patchRes.status).toBe(401);
     expect(deleteRes.status).toBe(401);
+  });
+
+  it('returns 404 when listing reviews for missing product', async () => {
+    const res = await request(app).get('/api/v1/products/missing-product-id/reviews');
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
   });
 
   it('creates, lists, updates, and deletes own review', async () => {

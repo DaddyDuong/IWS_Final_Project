@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { signAuthToken } from '../../src/lib/jwt.js';
 
 const isolatedDbPath = join(tmpdir(), `laptop-retail-addresses-${Date.now()}.db`);
 
@@ -13,6 +12,7 @@ process.env.JWT_SECRET = 'addresses-test-secret';
 
 let app;
 let prisma;
+let signAuthToken;
 
 async function applySchemaToDatabase(dbPath) {
   const migrationsDir = join(process.cwd(), 'prisma', 'migrations');
@@ -65,6 +65,7 @@ function buildAddressPayload(suffix) {
 describe('addresses CRUD routes', () => {
   beforeAll(async () => {
     await applySchemaToDatabase(isolatedDbPath);
+    ({ signAuthToken } = await import('../../src/lib/jwt.js'));
     ({ app } = await import('../../src/app.js'));
     ({ prisma } = await import('../../src/lib/prisma.js'));
   });
