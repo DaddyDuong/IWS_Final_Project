@@ -8,7 +8,7 @@ const checkoutSchema = z.object({
   addressId: z.string().trim().min(1),
 });
 
-const cancellableStatuses = ['pending', 'confirmed'];
+const cancellableStatuses = ['pending', 'processing'];
 
 const orderItemSelect = {
   id: true,
@@ -203,7 +203,7 @@ ordersRoutes.get('/:id', async (req, res, next) => {
 ordersRoutes.patch('/:id/cancel', async (req, res, next) => {
   try {
     const cancelledOrder = await prisma.$transaction(async (tx) => {
-      const order = await tx.order.findFirst({
+      const existingOrder = await tx.order.findFirst({
         where: {
           id: req.params.id,
           userId: req.authUser.id,
@@ -211,29 +211,39 @@ ordersRoutes.patch('/:id/cancel', async (req, res, next) => {
         select: {
           id: true,
           status: true,
-          items: {
-            select: {
-              productId: true,
-              quantity: true,
-            },
-          },
         },
       });
 
-      if (!order) {
+      if (!existingOrder) {
         throw { status: 404, code: 'ORDER_NOT_FOUND', message: 'Order not found' };
       }
 
-      if (!cancellableStatuses.includes(order.status)) {
+      const cancelResult = await tx.order.updateMany({
+        where: {
+          id: req.params.id,
+          userId: req.authUser.id,
+          status: {
+            in: cancellableStatuses,
+          },
+        },
+        data: {
+          status: 'canceled',
+        },
+      });
+
+      if (cancelResult.count === 0) {
         throw { status: 409, code: 'ORDER_NOT_CANCELLABLE', message: 'Order cannot be canceled' };
       }
 
-      await tx.order.update({
-        where: { id: order.id },
-        data: { status: 'canceled' },
+      const orderItems = await tx.orderItem.findMany({
+        where: { orderId: existingOrder.id },
+        select: {
+          productId: true,
+          quantity: true,
+        },
       });
 
-      for (const item of order.items) {
+      for (const item of orderItems) {
         await tx.product.update({
           where: { id: item.productId },
           data: {
@@ -245,7 +255,7 @@ ordersRoutes.patch('/:id/cancel', async (req, res, next) => {
       }
 
       return tx.order.findUnique({
-        where: { id: order.id },
+        where: { id: existingOrder.id },
         select: orderSelect,
       });
     });

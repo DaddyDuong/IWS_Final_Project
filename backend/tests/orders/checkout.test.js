@@ -344,6 +344,58 @@ describe('orders checkout and cancel routes', () => {
     expect(updatedProduct.stockQty).toBe(3);
   });
 
+  it('handles parallel cancel requests without double-restocking', async () => {
+    const { user, authHeader } = await createUserWithToken('cancel-parallel');
+    const address = await createAddressForUser(user.id, 'cancel-parallel');
+    const product = await createProduct('cancel-parallel', { stockQty: 3 });
+
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+        status: 'pending',
+        subtotal: 20000000,
+        shippingFee: 0,
+        total: 20000000,
+      },
+    });
+
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        productId: product.id,
+        unitPrice: 10000000,
+        quantity: 2,
+        lineTotal: 20000000,
+      },
+    });
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { stockQty: 1 },
+    });
+
+    const [firstRes, secondRes] = await Promise.all([
+      request(app)
+        .patch(`/api/v1/orders/${order.id}/cancel`)
+        .set('Authorization', authHeader),
+      request(app)
+        .patch(`/api/v1/orders/${order.id}/cancel`)
+        .set('Authorization', authHeader),
+    ]);
+
+    expect([firstRes.status, secondRes.status].sort()).toEqual([200, 409]);
+
+    const rejectedRes = firstRes.status === 409 ? firstRes : secondRes;
+    expect(rejectedRes.body.success).toBe(false);
+    expect(rejectedRes.body.error.code).toBe('ORDER_NOT_CANCELLABLE');
+
+    const updatedOrder = await prisma.order.findUnique({ where: { id: order.id } });
+    const updatedProduct = await prisma.product.findUnique({ where: { id: product.id } });
+    expect(updatedOrder.status).toBe('canceled');
+    expect(updatedProduct.stockQty).toBe(3);
+  });
+
   it('rejects cancel for non-cancellable order status', async () => {
     const { user, authHeader } = await createUserWithToken('cancel-status');
     const address = await createAddressForUser(user.id, 'cancel-status');
