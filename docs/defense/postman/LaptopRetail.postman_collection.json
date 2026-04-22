@@ -44,6 +44,9 @@
                   "}",
                   "if (json?.data?.user?.id) {",
                   "  pm.collectionVariables.set('userId', json.data.user.id);",
+                  "}",
+                  "if (json?.data?.user?.email) {",
+                  "  pm.collectionVariables.set('registeredEmail', json.data.user.email);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -120,6 +123,80 @@
                 "login"
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/auth/forgot-password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.demoResetToken) {",
+                  "  pm.collectionVariables.set('resetToken', json.data.demoResetToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registeredEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Uses the email captured from register. If ENABLE_DEMO_RESET_TOKEN=true, resetToken is captured automatically."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/auth/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"Password456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Uses resetToken captured from forgot-password when demo reset token mode is enabled."
           },
           "response": []
         }
@@ -641,6 +718,64 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "PATCH /api/v1/reviews/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated review comment for defense proof.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/reviews/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -673,7 +808,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"Password123\"\n}"
+              "raw": "{\n  \"email\": \"manager@laptop.local\",\n  \"password\": \"Manager@123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
@@ -866,6 +1001,10 @@
       "value": ""
     },
     {
+      "key": "registeredEmail",
+      "value": ""
+    },
+    {
       "key": "productId",
       "value": ""
     },
@@ -883,6 +1022,10 @@
     },
     {
       "key": "reviewId",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
       "value": ""
     },
     {

@@ -22,3 +22,12 @@ yarn-error.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Local tooling artifacts
+.playwright-mcp/
+docs/
+opencode.json
+
+# Local reference docs (not part of app source)
+DESIGN.md
+IWS_Spring_2026_Final_Project_Requirements.md
