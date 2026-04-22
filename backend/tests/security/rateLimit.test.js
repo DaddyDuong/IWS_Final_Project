@@ -7,6 +7,8 @@ describe('auth rate limit middleware', () => {
   beforeAll(async () => {
     process.env.AUTH_RATE_LIMIT_MAX = '3';
     process.env.AUTH_RATE_LIMIT_WINDOW_MS = '60000';
+    process.env.GLOBAL_RATE_LIMIT_MAX = '7';
+    process.env.GLOBAL_RATE_LIMIT_WINDOW_MS = '60000';
     vi.resetModules();
     ({ app } = await import('../../src/app.js'));
   });
@@ -24,6 +26,34 @@ describe('auth rate limit middleware', () => {
     expect(third.status).toBe(400);
     expect(fourth.status).toBe(429);
     expect(fourth.body.success).toBe(false);
+    expect(fourth.body.error.code).toBe('RATE_LIMITED');
+  });
+
+  it('applies global rate limiting before json parsing', async () => {
+    const endpoint = '/api/v1/products';
+    const malformedPayload = '{"broken":';
+
+    const first = await request(app)
+      .post(endpoint)
+      .set('Content-Type', 'application/json')
+      .send(malformedPayload);
+    const second = await request(app)
+      .post(endpoint)
+      .set('Content-Type', 'application/json')
+      .send(malformedPayload);
+    const third = await request(app)
+      .post(endpoint)
+      .set('Content-Type', 'application/json')
+      .send(malformedPayload);
+    const fourth = await request(app)
+      .post(endpoint)
+      .set('Content-Type', 'application/json')
+      .send(malformedPayload);
+
+    expect(first.status).toBe(400);
+    expect(second.status).toBe(400);
+    expect(third.status).toBe(400);
+    expect(fourth.status).toBe(429);
     expect(fourth.body.error.code).toBe('RATE_LIMITED');
   });
 });

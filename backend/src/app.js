@@ -18,10 +18,10 @@ import { sanitizeRequestTextFields } from './middlewares/sanitize.js';
 
 export const app = express();
 
-app.use(express.json());
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
 app.use(globalRateLimiter);
+app.use(express.json());
 app.use(sanitizeRequestTextFields);
 
 app.get('/health', (_req, res) => {
