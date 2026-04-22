@@ -246,6 +246,61 @@ describe('cart CRUD routes', () => {
     expect(accumulatedOverRes.body.error.code).toBe('CART_STOCK_EXCEEDED');
   });
 
+  it('handles two near-simultaneous adds without lost update', async () => {
+    const { authHeader } = await createUserWithToken('concurrent-add');
+    const product = await createProduct('concurrent-add', { stockQty: 10 });
+
+    const originalFindUnique = prisma.cartItem.findUnique;
+    let waitingCalls = 0;
+    let releaseWaitingCalls;
+    const waitForBothReads = new Promise((resolve) => {
+      releaseWaitingCalls = resolve;
+    });
+
+    prisma.cartItem.findUnique = async (...args) => {
+      const result = await originalFindUnique(...args);
+      waitingCalls += 1;
+
+      if (waitingCalls === 2) {
+        releaseWaitingCalls();
+      }
+
+      await waitForBothReads;
+      return result;
+    };
+
+    try {
+      const [firstRes, secondRes] = await Promise.all([
+        request(app)
+          .post('/api/v1/cart/items')
+          .set('Authorization', authHeader)
+          .send({ productId: product.id, quantity: 2 }),
+        request(app)
+          .post('/api/v1/cart/items')
+          .set('Authorization', authHeader)
+          .send({ productId: product.id, quantity: 3 }),
+      ]);
+
+      expect([firstRes.status, secondRes.status].sort()).toEqual([200, 201]);
+
+      const cartRes = await request(app)
+        .get('/api/v1/cart')
+        .set('Authorization', authHeader);
+
+      expect(cartRes.status).toBe(200);
+      expect(cartRes.body.success).toBe(true);
+      expect(cartRes.body.data.items).toHaveLength(1);
+      expect(cartRes.body.data.items[0]).toEqual(
+        expect.objectContaining({
+          productId: product.id,
+          quantity: 5,
+        }),
+      );
+    } finally {
+      prisma.cartItem.findUnique = originalFindUnique;
+    }
+  });
+
   it('rejects patch when quantity exceeds stock', async () => {
     const { user, authHeader } = await createUserWithToken('stock-patch');
     const product = await createProduct('stock-patch', { stockQty: 3 });
