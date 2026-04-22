@@ -1,11 +1,16 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
-import { PagePlaceholder } from './components/PagePlaceholder'
 import { RequireAuth } from './components/RequireAuth'
+import { AddressesPage } from './pages/AddressesPage'
+import { CartPage } from './pages/CartPage'
+import { CheckoutPage } from './pages/CheckoutPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { OrderDetailPage } from './pages/OrderDetailPage'
+import { OrdersPage } from './pages/OrdersPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { ProductsPage } from './pages/ProductsPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
@@ -23,18 +28,12 @@ function App() {
         <Route path="reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="profile" element={<PagePlaceholder title="Your profile" />} />
-          <Route path="cart" element={<PagePlaceholder title="Your cart" />} />
-          <Route path="checkout" element={<PagePlaceholder title="Checkout" />} />
-          <Route path="profile/orders" element={<PagePlaceholder title="Order history" />} />
-          <Route
-            path="profile/orders/:id"
-            element={<PagePlaceholder title="Order details" />}
-          />
-          <Route
-            path="profile/addresses"
-            element={<PagePlaceholder title="Saved addresses" />}
-          />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="profile/orders" element={<OrdersPage />} />
+          <Route path="profile/orders/:id" element={<OrderDetailPage />} />
+          <Route path="profile/addresses" element={<AddressesPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

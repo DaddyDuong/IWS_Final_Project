@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ProductsPage } from '../pages/ProductsPage'
@@ -81,5 +81,76 @@ describe('ProductsPage', () => {
 
     expect(screen.getByRole('heading', { name: /products/i })).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: /view details/i })).toBeInTheDocument()
+  })
+
+  it('requests the next page when pagination next button is clicked', async () => {
+    mockedGet
+      .mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              id: 'product-1',
+              sku: 'LAP-001',
+              name: 'MacBook Air 13',
+              brand: 'Apple',
+              cpu: 'Apple M3',
+              ramGb: 16,
+              storageGb: 512,
+              screenSize: '13.6',
+              price: 32990000,
+              stockQty: 12,
+            },
+          ],
+          meta: {
+            page: 1,
+            limit: 12,
+            total: 30,
+            totalPages: 3,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              id: 'product-2',
+              sku: 'LAP-002',
+              name: 'MacBook Pro 14',
+              brand: 'Apple',
+              cpu: 'Apple M3 Pro',
+              ramGb: 18,
+              storageGb: 512,
+              screenSize: '14.2',
+              price: 45990000,
+              stockQty: 6,
+            },
+          ],
+          meta: {
+            page: 2,
+            limit: 12,
+            total: 30,
+            totalPages: 3,
+          },
+        },
+      })
+
+    renderProductsPage('/products?page=1')
+
+    expect(await screen.findByRole('button', { name: /next/i })).toBeEnabled()
+
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    await waitFor(() => {
+      expect(mockedGet).toHaveBeenLastCalledWith('/products', {
+        params: {
+          page: 2,
+          limit: 12,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        },
+      })
+    })
+
+    expect(await screen.findByText(/page 2 of 3/i)).toBeInTheDocument()
   })
 })
