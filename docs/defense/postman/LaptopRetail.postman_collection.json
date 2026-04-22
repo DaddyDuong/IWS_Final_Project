@@ -583,6 +583,213 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Internal Manager Products",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/login (manager)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.token) {",
+                  "  pm.collectionVariables.set('managerToken', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as manager and stores JWT to managerToken. Adjust credentials to your seeded manager account."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/internal/products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id) {",
+                  "  pm.collectionVariables.set('internalProductId', json.data.id);",
+                  "}",
+                  "if (json?.data?.sku) {",
+                  "  pm.collectionVariables.set('internalProductSku', json.data.sku);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{managerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"INT-DEF-{{$timestamp}}\",\n  \"name\": \"Defense Internal Laptop\",\n  \"brand\": \"DefenseBrand\",\n  \"cpu\": \"Intel Core i7\",\n  \"ramGb\": 16,\n  \"storageGb\": 512,\n  \"screenSize\": \"15.6\",\n  \"price\": 31990000,\n  \"stockQty\": 12,\n  \"description\": \"Manager CRUD proof product\",\n  \"imageUrl\": \"https://example.com/internal-defense-product.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/internal/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "internal",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/internal/products/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{managerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Defense Internal Laptop Updated\",\n  \"price\": 32990000,\n  \"stockQty\": 9\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/internal/products/{{internalProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "internal",
+                "products",
+                "{{internalProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/internal/products/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{managerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/internal/products/{{internalProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "internal",
+                "products",
+                "{{internalProductId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth Rate Limit Proof",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/login (invalid credentials)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 429) {",
+                  "  pm.collectionVariables.set('authRateLimitObserved', 'true');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rate-limit-check@example.com\",\n  \"password\": \"wrong-password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Run this request repeatedly in Postman Runner to trigger auth rate limiting and capture a 429 response."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
@@ -617,6 +824,22 @@
     {
       "key": "reviewId",
       "value": ""
+    },
+    {
+      "key": "managerToken",
+      "value": ""
+    },
+    {
+      "key": "internalProductId",
+      "value": ""
+    },
+    {
+      "key": "internalProductSku",
+      "value": ""
+    },
+    {
+      "key": "authRateLimitObserved",
+      "value": "false"
     }
   ]
 }

@@ -15,7 +15,7 @@ Demonstrate end-to-end user flow for the Laptop Retail Website and confirm key b
 3. Open frontend at `http://localhost:5173`.
 4. Import Postman collection from `docs/defense/postman/LaptopRetail.postman_collection.json`.
 
-## Demo Timeline (10-15 minutes)
+## Demo Timeline (12-18 minutes)
 
 ### 1) System Health and Setup (1 minute)
 
@@ -29,13 +29,21 @@ Demonstrate end-to-end user flow for the Laptop Retail Website and confirm key b
 - Confirm JWT is captured in Postman variable `token`.
 - Run `Users > GET /api/v1/users/me` to prove protected route authorization.
 
-### 3) Product Discovery (2 minutes)
+### 3) Manager JWT + Internal Product CRUD Proof (2-3 minutes)
+
+- Run `Internal Manager Products > POST /api/v1/auth/login (manager)`.
+- Confirm manager JWT is captured in Postman variable `managerToken`.
+- Run `Internal Manager Products > POST /api/v1/internal/products` and verify `201` response.
+- Run `Internal Manager Products > PATCH /api/v1/internal/products/:id` and verify updates.
+- Run `Internal Manager Products > DELETE /api/v1/internal/products/:id` and verify soft-delete success.
+
+### 4) Product Discovery (2 minutes)
 
 - Run `Products > GET /api/v1/products` with filters/pagination parameters.
 - Run `Products > GET /api/v1/products/:id` using captured `productId`.
 - Mention support for sorting and search inputs in product list API.
 
-### 4) Cart + Address + Checkout (4-5 minutes)
+### 5) Cart + Address + Checkout (4-5 minutes)
 
 - Run `Cart > POST /api/v1/cart/items`.
 - Run `Cart > GET /api/v1/cart` and explain line item detail payload.
@@ -43,13 +51,19 @@ Demonstrate end-to-end user flow for the Laptop Retail Website and confirm key b
 - Run `Orders > POST /api/v1/orders/checkout`.
 - Highlight transactional behavior: stock validation, order creation, cart clearing.
 
-### 5) Order Lifecycle (2-3 minutes)
+### 6) Order Lifecycle (2-3 minutes)
 
 - Run `Orders > GET /api/v1/orders` and `GET /api/v1/orders/:id`.
 - Run `Orders > PATCH /api/v1/orders/:id/cancel`.
 - Explain cancel guardrails (only cancellable statuses) and stock restoration.
 
-### 6) Review Flow (optional, 1-2 minutes)
+### 7) Auth Rate-Limit 429 Proof (1-2 minutes)
+
+- Run `Auth Rate Limit Proof > POST /api/v1/auth/login (invalid credentials)` repeatedly in Runner.
+- Continue until backend returns `429 Too Many Requests`.
+- Show `Retry-After` response header and explain this proves auth endpoint abuse protection.
+
+### 8) Review Flow (optional, 1-2 minutes)
 
 - Run `Reviews > POST /api/v1/products/:id/reviews`.
 - Run `Reviews > GET /api/v1/products/:id/reviews`.
@@ -64,5 +78,6 @@ Demonstrate end-to-end user flow for the Laptop Retail Website and confirm key b
 ## Backup Plan
 
 - If register fails due to duplicate email, use login endpoint.
+- If manager login is unavailable, explain expected seeded manager account for defense and continue with customer flow.
 - If checkout fails due to stock constraints, rerun product list and pick another product.
 - If cancel fails with non-cancellable order status, show guardrail behavior and explain business rule.
