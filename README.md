@@ -1,53 +1,86 @@
 # Laptop Retail Website
 
-This repository contains a full-stack laptop retail demo:
-- `backend/`: Express + Prisma REST API
-- `frontend/`: React + Vite client
+Full-stack laptop retail web app for the IWS final project. This repository is organized for team handoff, so each member can run the project quickly and locate the files they need to edit.
+
+## What this project includes
+
+- Customer auth flow: register, login, forgot password, reset password
+- Product catalog with server-side filtering, sorting, and pagination
+- Cart flow: add, update quantity, remove item
+- Checkout flow that creates orders and clears cart in one transaction
+- Account features: profile, addresses CRUD, order history/detail/cancel
+- Reviews CRUD per product
+- Manager-only internal product CRUD API endpoints
+
+## Repository structure
+
+```text
+.
+├── backend/
+│   ├── prisma/         # schema, migrations, seed data
+│   ├── src/            # app, routes, middlewares, libs
+│   ├── tests/          # backend integration tests
+│   └── README.md
+└── frontend/
+    ├── src/            # pages, components, client libs, stores
+    ├── public/
+    └── README.md
+```
 
 ## Prerequisites
 
 - Node.js 20+
 - npm 10+
 
-## Run Instructions
+## Quick start (team handoff)
+
+Run these commands from the repository root:
 
 1. Install dependencies:
-   - `cd backend && npm install`
-   - `cd frontend && npm install`
-2. Start backend API (Terminal 1):
-   - `cd backend`
-   - `JWT_SECRET=dev-insecure-jwt-secret npm run dev`
-3. Start frontend app (Terminal 2):
-   - `cd frontend`
-   - `npm run dev`
-4. Open `http://localhost:5173`
+   - `npm install --prefix backend`
+   - `npm install --prefix frontend`
+2. Prepare local database:
+   - `npm run prisma:migrate --prefix backend`
+   - `npm run prisma:seed --prefix backend`
+3. Start backend (Terminal 1):
+   - `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+4. Start frontend (Terminal 2):
+   - `npm run dev --prefix frontend`
+5. Open `http://localhost:5173`
 
-Notes:
-- Frontend defaults to `http://localhost:8080/api/v1`.
-- Backend health check: `GET http://localhost:8080/health`.
+## Teammate handoff map
 
-## Defense Artifacts
+- If you work on backend features, start at `backend/src/app.js`, then follow `backend/src/routes/`.
+- If you work on frontend pages, start at `frontend/src/App.jsx`, then open `frontend/src/pages/`.
+- If you work on shared API contracts, check both `backend/src/routes/` and `frontend/src/lib/customerApi.js`.
 
-- Postman collection: `docs/defense/postman/LaptopRetail.postman_collection.json`
-- Demo walkthrough: `docs/defense/demo-script.md`
-- Screenshots folder: `docs/defense/screenshots/`
+## Default local URLs
 
-## Demo Checklist
+- Frontend: `http://localhost:5173`
+- Backend API base: `http://localhost:8080/api/v1`
+- Backend health: `http://localhost:8080/health`
 
-- [ ] Backend and frontend run locally.
-- [ ] Postman environment variable `baseUrl` points to `http://localhost:8080`.
-- [ ] Postman `Auth > Register` or `Auth > Login` returns a JWT and sets `token`.
-- [ ] Postman `Internal Manager Products` proves manager JWT auth and internal create/update/delete endpoints.
-- [ ] Product listing and product detail endpoints return expected data.
-- [ ] Cart flow works in Postman: add item, view cart, update quantity, remove item, then add again for checkout.
-- [ ] Address flow works: create and list addresses.
-- [ ] Checkout creates an order and clears the cart.
-- [ ] Order listing/detail/cancel endpoints behave correctly.
-- [ ] Postman `Auth Rate Limit Proof` returns `429 Too Many Requests` in repeated-run scenario.
-- [ ] Optional: review create/list flow works on a chosen product.
+## Seeded account
 
-## Verification Commands
+Manager account used for internal product CRUD API testing:
 
-- Backend tests: `cd backend && npm test`
-- Frontend tests: `cd frontend && npm run test:run`
-- Frontend build: `cd frontend && npm run build`
+- Email: `manager@laptop.local`
+- Password: `Manager@123`
+
+## Where to look first
+
+- Backend API runbook: `backend/README.md`
+- Frontend app runbook: `frontend/README.md`
+
+## Common commands
+
+- Backend tests: `npm test --prefix backend`
+- Frontend tests: `npm run test:run --prefix frontend`
+- Frontend lint: `npm run lint --prefix frontend`
+- Frontend build: `npm run build --prefix frontend`
+
+## Troubleshooting
+
+- If backend returns missing-table errors, run migrate + seed again.
+- If forgot-password does not return a demo token locally, set `ENABLE_DEMO_RESET_TOKEN=true` before starting backend.
+- If frontend cannot call backend, verify `VITE_API_BASE_URL` in `frontend` and CORS settings in `backend/src/config/env.js`.
