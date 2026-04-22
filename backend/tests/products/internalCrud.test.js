@@ -2,14 +2,18 @@ import { readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { signAuthToken } from '../../src/lib/jwt.js';
 
 const isolatedDbPath = join(tmpdir(), `laptop-retail-internal-products-${Date.now()}.db`);
 
 process.env.DATABASE_URL = `file:${isolatedDbPath}`;
 process.env.JWT_SECRET = 'internal-products-test-secret';
+
+function signAuthToken(payload) {
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+}
 
 let app;
 let prisma;
