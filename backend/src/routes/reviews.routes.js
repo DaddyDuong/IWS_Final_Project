@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middlewares/auth.js';
+import { sanitizeRequestTextFields } from '../middlewares/sanitize.js';
 import { validateBody } from '../middlewares/validate.js';
 
 const createReviewSchema = z.object({
@@ -63,7 +64,12 @@ reviewsRoutes.get('/products/:id/reviews', async (req, res, next) => {
   });
 });
 
-reviewsRoutes.post('/products/:id/reviews', requireAuth, validateBody(createReviewSchema), async (req, res, next) => {
+reviewsRoutes.post(
+  '/products/:id/reviews',
+  requireAuth,
+  sanitizeRequestTextFields,
+  validateBody(createReviewSchema),
+  async (req, res, next) => {
   const product = await prisma.product.findFirst({
     where: {
       id: req.params.id,
@@ -97,9 +103,15 @@ reviewsRoutes.post('/products/:id/reviews', requireAuth, validateBody(createRevi
 
     return next(err);
   }
-});
+  },
+);
 
-reviewsRoutes.patch('/reviews/:id', requireAuth, validateBody(updateReviewSchema), async (req, res, next) => {
+reviewsRoutes.patch(
+  '/reviews/:id',
+  requireAuth,
+  sanitizeRequestTextFields,
+  validateBody(updateReviewSchema),
+  async (req, res, next) => {
   const review = await prisma.review.findFirst({
     where: {
       id: req.params.id,
@@ -126,7 +138,8 @@ reviewsRoutes.patch('/reviews/:id', requireAuth, validateBody(updateReviewSchema
     success: true,
     data: updatedReview,
   });
-});
+  },
+);
 
 reviewsRoutes.delete('/reviews/:id', requireAuth, async (req, res, next) => {
   const review = await prisma.review.findFirst({

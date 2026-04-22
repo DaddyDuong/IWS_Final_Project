@@ -286,6 +286,51 @@ describe('internal product CRUD routes', () => {
       }),
     );
   });
+
+  it('sanitizes text fields on internal product writes', async () => {
+    const managerToken = await buildAuthHeader('manager');
+
+    const createRes = await request(app)
+      .post('/api/v1/internal/products')
+      .set('Authorization', managerToken)
+      .send({
+        sku: '  <INT-SAN-001>  ',
+        name: '  <Internal> Test Laptop  ',
+        brand: '  <BrandX>  ',
+        cpu: '  <Intel Core i7>  ',
+        ramGb: 16,
+        storageGb: 512,
+        screenSize: '  <15.6>  ',
+        price: 25000000,
+        stockQty: 8,
+        description: '  <Powerful> machine for <testing>  ',
+        imageUrl: 'https://example.com/int-san.jpg',
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.success).toBe(true);
+    expect(createRes.body.data).toEqual(
+      expect.objectContaining({
+        sku: 'INT-SAN-001',
+        name: 'Internal Test Laptop',
+        brand: 'BrandX',
+        cpu: 'Intel Core i7',
+        screenSize: '15.6',
+        description: 'Powerful machine for testing',
+      }),
+    );
+
+    const updateRes = await request(app)
+      .patch(`/api/v1/internal/products/${createRes.body.data.id}`)
+      .set('Authorization', managerToken)
+      .send({
+        name: '  <Updated> Laptop Name  ',
+      });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.success).toBe(true);
+    expect(updateRes.body.data.name).toBe('Updated Laptop Name');
+  });
 });
 
 afterAll(async () => {

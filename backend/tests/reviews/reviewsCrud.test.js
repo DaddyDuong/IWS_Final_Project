@@ -240,6 +240,29 @@ describe('reviews CRUD routes', () => {
     expect(invalidPatchRes.status).toBe(400);
     expect(invalidPatchRes.body.success).toBe(false);
   });
+
+  it('sanitizes text fields on review writes', async () => {
+    const { authHeader } = await createUserWithToken('review-sanitize');
+    const product = await createProduct('sanitize');
+
+    const createRes = await request(app)
+      .post(`/api/v1/products/${product.id}/reviews`)
+      .set('Authorization', authHeader)
+      .send({ rating: 5, comment: '  <Great> laptop for <coding>  ' });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.success).toBe(true);
+    expect(createRes.body.data.comment).toBe('Great laptop for coding');
+
+    const updateRes = await request(app)
+      .patch(`/api/v1/reviews/${createRes.body.data.id}`)
+      .set('Authorization', authHeader)
+      .send({ comment: '  <Still> great after 2 weeks  ' });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.success).toBe(true);
+    expect(updateRes.body.data.comment).toBe('Still great after 2 weeks');
+  });
 });
 
 afterAll(async () => {

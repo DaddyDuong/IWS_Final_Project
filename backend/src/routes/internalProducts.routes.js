@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
+import { sanitizeRequestTextFields } from '../middlewares/sanitize.js';
 import { validateBody } from '../middlewares/validate.js';
 
 const createProductSchema = z.object({
@@ -74,7 +75,7 @@ export const internalProductsRoutes = Router();
 
 internalProductsRoutes.use(requireAuth, requireRole('manager'));
 
-internalProductsRoutes.post('/', validateBody(createProductSchema), async (req, res, next) => {
+internalProductsRoutes.post('/', sanitizeRequestTextFields, validateBody(createProductSchema), async (req, res, next) => {
   let product;
 
   try {
@@ -93,7 +94,7 @@ internalProductsRoutes.post('/', validateBody(createProductSchema), async (req, 
   });
 });
 
-internalProductsRoutes.patch('/:id', validateBody(updateProductSchema), async (req, res, next) => {
+internalProductsRoutes.patch('/:id', sanitizeRequestTextFields, validateBody(updateProductSchema), async (req, res, next) => {
   let updateResult;
 
   try {

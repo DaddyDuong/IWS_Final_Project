@@ -14,6 +14,11 @@ export async function fetchCart() {
   return getPayloadData(response)?.items ?? []
 }
 
+export async function addCartItem({ productId, quantity }) {
+  const response = await apiClient.post('/cart/items', { productId, quantity })
+  return getPayloadData(response) ?? null
+}
+
 export async function updateCartItem({ id, quantity }) {
   const response = await apiClient.patch(`/cart/items/${id}`, { quantity })
   return getPayloadData(response) ?? null

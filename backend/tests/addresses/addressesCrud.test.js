@@ -211,6 +211,36 @@ describe('addresses CRUD routes', () => {
     expect(patchRes.status).toBe(400);
     expect(patchRes.body.success).toBe(false);
   });
+
+  it('sanitizes text fields on address writes', async () => {
+    const { authHeader } = await createUserWithToken('address-sanitize');
+
+    const createRes = await request(app)
+      .post('/api/v1/addresses')
+      .set('Authorization', authHeader)
+      .send({
+        receiver: '  <Admin> Alice  ',
+        phone: '  0900000000  ',
+        line1: '  <b>1 Main St</b>  ',
+        ward: '  <Ward 1>  ',
+        district: '  District 1  ',
+        city: '  <Ho Chi Minh City>  ',
+        isDefault: false,
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.success).toBe(true);
+    expect(createRes.body.data).toEqual(
+      expect.objectContaining({
+        receiver: 'Admin Alice',
+        phone: '0900000000',
+        line1: 'b1 Main St/b',
+        ward: 'Ward 1',
+        district: 'District 1',
+        city: 'Ho Chi Minh City',
+      }),
+    );
+  });
 });
 
 afterAll(async () => {

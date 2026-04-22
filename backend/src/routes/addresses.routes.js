@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middlewares/auth.js';
+import { sanitizeRequestTextFields } from '../middlewares/sanitize.js';
 import { validateBody } from '../middlewares/validate.js';
 
 const createAddressSchema = z.object({
@@ -57,7 +58,7 @@ addressesRoutes.get('/', async (req, res) => {
   });
 });
 
-addressesRoutes.post('/', validateBody(createAddressSchema), async (req, res) => {
+addressesRoutes.post('/', sanitizeRequestTextFields, validateBody(createAddressSchema), async (req, res) => {
   const address = await prisma.$transaction(async (tx) => {
     if (req.validatedBody.isDefault === true) {
       await tx.address.updateMany({
@@ -81,7 +82,7 @@ addressesRoutes.post('/', validateBody(createAddressSchema), async (req, res) =>
   });
 });
 
-addressesRoutes.patch('/:id', validateBody(updateAddressSchema), async (req, res, next) => {
+addressesRoutes.patch('/:id', sanitizeRequestTextFields, validateBody(updateAddressSchema), async (req, res, next) => {
   const existingAddress = await prisma.address.findFirst({
     where: {
       id: req.params.id,
