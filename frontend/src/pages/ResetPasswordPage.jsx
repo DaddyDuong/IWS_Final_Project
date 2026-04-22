@@ -64,7 +64,7 @@ export function ResetPasswordPage() {
       <div className="auth-card">
         <p className="eyebrow">Set a new password</p>
         <h1 id="reset-password-title">Reset password</h1>
-        <p>Use a strong password with at least one number and one special character.</p>
+        <p>Use a password with at least 8 characters.</p>
 
         {feedback.message ? (
           <p

@@ -6,17 +6,24 @@ import { formatApiError } from '../lib/formatters'
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
+  const [demoResetToken, setDemoResetToken] = useState('')
+  const [copyFeedback, setCopyFeedback] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
     setIsSubmitting(true)
     setFeedback({ message: '', type: 'success' })
+    setDemoResetToken('')
+    setCopyFeedback('')
 
     try {
       const response = await apiClient.post('/auth/forgot-password', { email })
       const message = response?.data?.data?.message || 'If your email exists, reset instructions were sent.'
+      const nextDemoResetToken = response?.data?.data?.demoResetToken
+
       setFeedback({ message, type: 'success' })
+      setDemoResetToken(typeof nextDemoResetToken === 'string' ? nextDemoResetToken : '')
     } catch (error) {
       setFeedback({
         message: formatApiError(error, 'Unable to process this request right now.'),
@@ -24,6 +31,23 @@ export function ForgotPasswordPage() {
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleCopyToken() {
+    if (!demoResetToken) {
+      return
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable')
+      }
+
+      await navigator.clipboard.writeText(demoResetToken)
+      setCopyFeedback('Demo reset token copied.')
+    } catch {
+      setCopyFeedback('Copy is unavailable in this browser. Select and copy the token manually.')
     }
   }
 
@@ -42,6 +66,30 @@ export function ForgotPasswordPage() {
           >
             {feedback.message}
           </p>
+        ) : null}
+
+        {demoResetToken ? (
+          <div className="catalog-feedback catalog-feedback--success" aria-live="polite">
+            <p>
+              <strong>Demo reset token (localhost):</strong>
+            </p>
+            <input
+              type="text"
+              value={demoResetToken}
+              readOnly
+              onFocus={(event) => event.target.select()}
+              aria-label="Demo reset token"
+            />
+            <div className="cta-row">
+              <button type="button" className="button button--secondary" onClick={handleCopyToken}>
+                Copy token
+              </button>
+              <Link className="button button--secondary" to={`/reset-password?token=${encodeURIComponent(demoResetToken)}`}>
+                Continue to reset password
+              </Link>
+            </div>
+            {copyFeedback ? <p>{copyFeedback}</p> : null}
+          </div>
         ) : null}
 
         <form className="auth-form" onSubmit={handleSubmit}>

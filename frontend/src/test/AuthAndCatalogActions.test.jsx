@@ -153,6 +153,49 @@ describe('auth and catalog actions', () => {
     expect(await screen.findByText(/reset email sent/i)).toBeInTheDocument()
   })
 
+  it('renders demo reset token from forgot-password response', async () => {
+    const mockedWriteText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: mockedWriteText,
+      },
+    })
+
+    mockedApiPost.mockResolvedValueOnce({
+      data: {
+        data: {
+          message: 'Reset email sent',
+          demoResetToken: 'demo-token-123',
+        },
+      },
+    })
+
+    renderWithProviders(
+      ['/forgot-password'],
+      <>
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<h1>Reset destination</h1>} />
+      </>,
+    )
+
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'alice@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: /send reset link/i }))
+
+    expect(await screen.findByLabelText(/demo reset token/i)).toHaveValue('demo-token-123')
+
+    fireEvent.click(screen.getByRole('button', { name: /copy token/i }))
+
+    await waitFor(() => {
+      expect(mockedWriteText).toHaveBeenCalledWith('demo-token-123')
+    })
+
+    expect(screen.getByRole('link', { name: /continue to reset password/i })).toHaveAttribute(
+      'href',
+      '/reset-password?token=demo-token-123',
+    )
+  })
+
   it('submits reset-password request and shows success message', async () => {
     mockedApiPost.mockResolvedValueOnce({
       data: {
