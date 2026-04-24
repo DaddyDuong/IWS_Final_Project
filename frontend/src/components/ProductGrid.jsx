@@ -1,10 +1,5 @@
 import { Link } from 'react-router-dom'
-
-const currencyFormatter = new Intl.NumberFormat('vi-VN', {
-  style: 'currency',
-  currency: 'VND',
-  maximumFractionDigits: 0,
-})
+import { currencyFormatter } from '../lib/formatters'
 
 function ProductCard({ product }) {
   return (
@@ -22,7 +17,7 @@ function ProductCard({ product }) {
         <div className="product-card__body">
           <p className="eyebrow">{product.brand}</p>
           <h2>{product.name}</h2>
-          <p className="product-specs">
+          <p className="product-specs" aria-label="Laptop specifications">
             {product.cpu} - {product.ramGb}GB RAM - {product.storageGb}GB SSD
           </p>
           <div className="product-card__footer">

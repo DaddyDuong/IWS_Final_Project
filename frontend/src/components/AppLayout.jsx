@@ -3,8 +3,8 @@ import { NavLink, Outlet } from 'react-router-dom'
 const primaryLinks = [
   { to: '/', label: 'Home' },
   { to: '/products', label: 'Products' },
-  { to: '/profile', label: 'Profile' },
   { to: '/cart', label: 'Cart' },
+  { to: '/profile', label: 'Account' },
 ]
 
 const accountLinks = [
@@ -17,11 +17,11 @@ export function AppLayout() {
     <div className="app-shell">
       <header className="app-nav-wrap">
         <nav className="app-nav" aria-label="Primary navigation">
-          <NavLink to="/" className="brand-mark">
+          <NavLink to="/" className="brand-mark" end>
             Laptop Retail
           </NavLink>
 
-          <ul className="nav-links">
+          <ul className="nav-links nav-links--primary">
             {primaryLinks.map((item) => (
               <li key={item.to}>
                 <NavLink

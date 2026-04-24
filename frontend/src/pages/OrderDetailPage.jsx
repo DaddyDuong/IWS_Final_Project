@@ -25,7 +25,7 @@ export function OrderDetailPage() {
 
   if (orderQuery.isLoading) {
     return (
-      <section className="page page--customer" aria-labelledby="order-detail-title">
+      <section className="page page--customer account-page" aria-labelledby="order-detail-title">
         <h1 id="order-detail-title">Order details</h1>
         <p>Loading order details...</p>
       </section>
@@ -34,7 +34,7 @@ export function OrderDetailPage() {
 
   if (orderQuery.isError) {
     return (
-      <section className="page page--customer" aria-labelledby="order-detail-title">
+      <section className="page page--customer account-page" aria-labelledby="order-detail-title">
         <h1 id="order-detail-title">Order details</h1>
         <p className="catalog-feedback catalog-feedback--error">
           {formatApiError(orderQuery.error, 'Unable to load this order right now.')}
@@ -50,7 +50,7 @@ export function OrderDetailPage() {
 
   if (!order) {
     return (
-      <section className="page page--customer" aria-labelledby="order-detail-title">
+      <section className="page page--customer account-page" aria-labelledby="order-detail-title">
         <h1 id="order-detail-title">Order details</h1>
         <p className="catalog-feedback catalog-feedback--error">Order details are unavailable.</p>
         <Link className="button button--secondary" to="/profile/orders">
@@ -72,7 +72,7 @@ export function OrderDetailPage() {
   }
 
   return (
-    <section className="page page--customer" aria-labelledby="order-detail-title">
+    <section className="page page--customer account-page" aria-labelledby="order-detail-title">
       <p className="eyebrow">Order</p>
       <h1 id="order-detail-title">Order #{order.id.slice(0, 8)}</h1>
 
@@ -81,7 +81,7 @@ export function OrderDetailPage() {
         <p>Placed at: {dateTimeFormatter.format(new Date(order.placedAt))}</p>
       </div>
 
-      <article className="customer-card">
+      <article className="customer-card account-card">
         <h2>Shipping address</h2>
         <p>{order.address.receiver}</p>
         <p>{order.address.phone}</p>
@@ -90,7 +90,7 @@ export function OrderDetailPage() {
         </p>
       </article>
 
-      <article className="customer-card">
+      <article className="customer-card account-card">
         <h2>Items</h2>
         <ul className="order-item-list">
           {order.items.map((item) => (
@@ -106,7 +106,7 @@ export function OrderDetailPage() {
         </ul>
       </article>
 
-      <article className="customer-card order-totals">
+      <article className="customer-card account-card order-totals">
         <p>Subtotal: {currencyFormatter.format(order.subtotal)}</p>
         <p>Shipping fee: {currencyFormatter.format(order.shippingFee)}</p>
         <p>

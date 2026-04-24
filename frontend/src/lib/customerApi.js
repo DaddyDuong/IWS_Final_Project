@@ -70,3 +70,24 @@ export async function cancelOrder(id) {
   const response = await apiClient.patch(`/orders/${id}/cancel`)
   return getPayloadData(response) ?? null
 }
+
+export async function fetchProductReviews(productId) {
+  const response = await apiClient.get(`/products/${productId}/reviews`)
+  const payload = getPayloadData(response)
+  return Array.isArray(payload) ? payload : []
+}
+
+export async function createProductReview({ productId, payload }) {
+  const response = await apiClient.post(`/products/${productId}/reviews`, payload)
+  return getPayloadData(response) ?? null
+}
+
+export async function updateProductReview({ id, payload }) {
+  const response = await apiClient.patch(`/reviews/${id}`, payload)
+  return getPayloadData(response) ?? null
+}
+
+export async function deleteProductReview(id) {
+  const response = await apiClient.delete(`/reviews/${id}`)
+  return getPayloadData(response) ?? null
+}

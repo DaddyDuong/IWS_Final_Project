@@ -12,7 +12,7 @@ export function OrdersPage() {
   const orders = ordersQuery.data || []
 
   return (
-    <section className="page page--customer" aria-labelledby="orders-title">
+    <section className="page page--customer account-page" aria-labelledby="orders-title">
       <p className="eyebrow">Orders</p>
       <h1 id="orders-title">Order history</h1>
 
@@ -39,7 +39,7 @@ export function OrdersPage() {
         <ul className="order-list">
           {orders.map((order) => (
             <li key={order.id}>
-              <article className="customer-card">
+              <article className="customer-card account-card">
                 <div className="order-row">
                   <h2>Order #{order.id.slice(0, 8)}</h2>
                   <span className="order-status">{order.status}</span>

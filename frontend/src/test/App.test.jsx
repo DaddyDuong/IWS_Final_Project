@@ -66,11 +66,13 @@ describe('App routing shell', () => {
     mockedFetchProfile.mockReset()
   })
 
-  it('renders home route content with app navigation', () => {
+  it('renders redesigned home route content with app navigation', () => {
     renderApp(['/'])
 
-    expect(screen.getByRole('heading', { name: /discover your next laptop/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /find the laptop that fits your next move/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^products$/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /shop the catalog/i })).toBeInTheDocument()
+    expect(screen.getByText(/server-side filters/i)).toBeInTheDocument()
   })
 
   it('renders login page at /login', () => {
@@ -110,6 +112,7 @@ describe('App routing shell', () => {
     renderApp(['/cart'])
 
     expect(await screen.findByRole('heading', { name: /your cart/i })).toBeInTheDocument()
+    expect(await screen.findByText(/step 1 of 2/i)).toBeInTheDocument()
     expect(mockedFetchCart).toHaveBeenCalled()
   })
 
@@ -121,6 +124,7 @@ describe('App routing shell', () => {
     renderApp(['/checkout'])
 
     expect(await screen.findByRole('heading', { name: /checkout/i })).toBeInTheDocument()
+    expect(await screen.findByText(/step 2 of 2/i)).toBeInTheDocument()
     expect(mockedFetchCart).toHaveBeenCalled()
     expect(mockedFetchAddresses).toHaveBeenCalled()
   })

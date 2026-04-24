@@ -176,7 +176,7 @@ export function AddressesPage() {
   }
 
   return (
-    <section className="page page--customer" aria-labelledby="addresses-title">
+    <section className="page page--customer account-page" aria-labelledby="addresses-title">
       <p className="eyebrow">Addresses</p>
       <h1 id="addresses-title">Saved addresses</h1>
 
@@ -190,7 +190,7 @@ export function AddressesPage() {
         </p>
       ) : null}
 
-      <article className="customer-card">
+      <article className="customer-card account-card">
         <h2>Add a new address</h2>
         <form className="address-form" onSubmit={handleCreate}>
           <AddressFields value={newAddress} onChange={updateNewAddress} prefix="new-address" />
@@ -218,7 +218,7 @@ export function AddressesPage() {
             const isEditing = editingId === address.id
             return (
               <li key={address.id}>
-                <article className="customer-card">
+                <article className="customer-card account-card">
                   {!isEditing ? (
                     <>
                       <h2>

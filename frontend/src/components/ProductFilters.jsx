@@ -48,7 +48,11 @@ export function ProductFilters({ query, onQueryChange }) {
   }
 
   return (
-    <form className="product-filters" onSubmit={(event) => event.preventDefault()}>
+    <form
+      className="product-filters"
+      aria-label="Product filters"
+      onSubmit={(event) => event.preventDefault()}
+    >
       <div className="filter-row filter-row--search">
         <label className="filter-field" htmlFor="product-q">
           Search

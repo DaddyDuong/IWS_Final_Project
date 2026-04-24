@@ -56,6 +56,7 @@ export function CheckoutPage() {
   return (
     <section className="page page--customer" aria-labelledby="checkout-title">
       <p className="eyebrow">Checkout</p>
+      <p className="step-label">Step 2 of 2</p>
       <h1 id="checkout-title">Checkout</h1>
 
       {feedback ? (

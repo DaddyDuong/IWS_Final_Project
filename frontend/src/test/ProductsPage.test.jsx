@@ -55,6 +55,18 @@ describe('ProductsPage', () => {
             price: 32990000,
             stockQty: 12,
           },
+          {
+            id: 'product-2',
+            sku: 'LAP-002',
+            name: 'ROG Zephyrus G14',
+            brand: 'ASUS',
+            cpu: 'Ryzen 9',
+            ramGb: 32,
+            storageGb: 1024,
+            screenSize: '14',
+            price: 52990000,
+            stockQty: 4,
+          },
         ],
         meta: {
           page: 2,
@@ -80,7 +92,8 @@ describe('ProductsPage', () => {
     })
 
     expect(screen.getByRole('heading', { name: /products/i })).toBeInTheDocument()
-    expect(await screen.findByRole('link', { name: /view details/i })).toBeInTheDocument()
+    expect(await screen.findAllByRole('link', { name: /view details/i })).toHaveLength(4)
+    expect(await screen.findByRole('heading', { name: /compare visible laptops/i })).toBeInTheDocument()
   })
 
   it('requests the next page when pagination next button is clicked', async () => {

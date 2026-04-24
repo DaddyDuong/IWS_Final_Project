@@ -28,7 +28,7 @@ export function ProfilePage() {
   })
 
   return (
-    <section className="page page--customer" aria-labelledby="profile-title">
+    <section className="page page--customer account-page" aria-labelledby="profile-title">
       <p className="eyebrow">Account</p>
       <h1 id="profile-title">Your profile</h1>
 
@@ -42,7 +42,7 @@ export function ProfilePage() {
 
       {profileQuery.data ? (
         <div className="profile-grid">
-          <article className="customer-card">
+          <article className="customer-card account-card">
             <h2>Account details</h2>
             <dl className="profile-details">
               <dt>Name</dt>
@@ -58,7 +58,7 @@ export function ProfilePage() {
 
           <div className="profile-grid__links">
             {profileQuickLinks.map((item) => (
-              <Link key={item.to} className="customer-card customer-link-card" to={item.to}>
+              <Link key={item.to} className="customer-card account-card customer-link-card" to={item.to}>
                 <h2>{item.title}</h2>
                 <p>{item.description}</p>
               </Link>

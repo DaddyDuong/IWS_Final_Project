@@ -75,6 +75,7 @@ export function CartPage() {
   return (
     <section className="page page--customer" aria-labelledby="cart-title">
       <p className="eyebrow">Cart</p>
+      <p className="step-label">Step 1 of 2</p>
       <h1 id="cart-title">Your cart</h1>
 
       {feedback.message ? (

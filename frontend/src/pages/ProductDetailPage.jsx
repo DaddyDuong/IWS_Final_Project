@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { apiClient } from '../lib/apiClient'
+import { ProductReviews } from '../components/ProductReviews'
 import { addCartItem } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
@@ -84,16 +85,21 @@ export function ProductDetailPage() {
   const product = productQuery.data
 
   return (
-    <section className="page page--detail" aria-labelledby="product-detail-title">
-      <p className="eyebrow">{product.brand}</p>
-      <h1 id="product-detail-title">{product.name}</h1>
-
-      <div className="product-detail-grid">
-        <div className="product-detail-media">
+    <section className="product-detail-page" aria-labelledby="product-detail-title">
+      <div className="product-hero-panel">
+        <div className="product-detail-media product-detail-media--hero">
           <img src={product.imageUrl} alt={product.name} width="960" height="720" />
         </div>
 
-        <div className="product-detail-content">
+        <div className="purchase-panel" aria-label="Purchase panel">
+          <p className="eyebrow">{product.brand}</p>
+          <h1 id="product-detail-title">{product.name}</h1>
+          <p>{product.description}</p>
+          <p className="product-detail-price">{currencyFormatter.format(product.price)}</p>
+          <p className={product.stockQty > 0 ? 'stock stock--available' : 'stock stock--empty'}>
+            {product.stockQty > 0 ? `${product.stockQty} in stock` : 'Out of stock'}
+          </p>
+
           {feedback.message ? (
             <p
               className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
@@ -104,44 +110,46 @@ export function ProductDetailPage() {
             </p>
           ) : null}
 
-          <p>{product.description}</p>
-          <dl>
-            <dt>CPU</dt>
-            <dd>{product.cpu}</dd>
-
-            <dt>RAM</dt>
-            <dd>{product.ramGb} GB</dd>
-
-            <dt>Storage</dt>
-            <dd>{product.storageGb} GB SSD</dd>
-
-            <dt>Screen</dt>
-            <dd>{product.screenSize} inch</dd>
-
-            <dt>Availability</dt>
-            <dd>{product.stockQty > 0 ? `${product.stockQty} in stock` : 'Out of stock'}</dd>
-
-            <dt>Price</dt>
-            <dd className="product-detail-price">{currencyFormatter.format(product.price)}</dd>
+          <dl className="spec-list">
+            <div>
+              <dt>CPU</dt>
+              <dd>{product.cpu}</dd>
+            </div>
+            <div>
+              <dt>RAM</dt>
+              <dd>{product.ramGb} GB</dd>
+            </div>
+            <div>
+              <dt>Storage</dt>
+              <dd>{product.storageGb} GB SSD</dd>
+            </div>
+            <div>
+              <dt>Screen</dt>
+              <dd>{product.screenSize} inch</dd>
+            </div>
           </dl>
 
-          <Link className="button button--secondary" to="/products">
-            Back to catalog
-          </Link>
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={product.stockQty < 1 || addToCartMutation.isPending}
-            onClick={handleAddToCart}
-          >
-            {product.stockQty < 1
-              ? 'Out of stock'
-              : addToCartMutation.isPending
-                ? 'Adding...'
-                : 'Add to cart'}
-          </button>
+          <div className="cta-row">
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={product.stockQty < 1 || addToCartMutation.isPending}
+              onClick={handleAddToCart}
+            >
+              {product.stockQty < 1
+                ? 'Out of stock'
+                : addToCartMutation.isPending
+                  ? 'Adding...'
+                  : 'Add to cart'}
+            </button>
+            <Link className="button button--secondary" to="/products">
+              Back to catalog
+            </Link>
+          </div>
         </div>
       </div>
+
+      <ProductReviews productId={product.id} />
     </section>
   )
 }

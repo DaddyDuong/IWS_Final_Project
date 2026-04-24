@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
+import { ProductComparison } from '../components/ProductComparison'
 import { ProductFilters } from '../components/ProductFilters'
 import { ProductGrid } from '../components/ProductGrid'
 import { apiClient } from '../lib/apiClient'
@@ -49,9 +50,15 @@ export function ProductsPage() {
   }
 
   return (
-    <section className="page page--catalog" aria-labelledby="products-title">
-      <p className="eyebrow">Laptop catalog</p>
-      <h1 id="products-title">Products</h1>
+    <section className="catalog-page page page--catalog" aria-labelledby="products-title">
+      <header className="catalog-header">
+        <p className="eyebrow">Laptop catalog</p>
+        <h1 id="products-title">Products</h1>
+        <p>
+          Compare premium notebooks, tune the filters, and move from shortlist to detail view
+          without losing your place.
+        </p>
+      </header>
 
       <ProductFilters query={query} onQueryChange={updateQuery} />
 
@@ -64,6 +71,8 @@ export function ProductsPage() {
         isFetching={productsQuery.isFetching}
         onPageChange={(nextPage) => updateQuery({ page: nextPage })}
       />
+
+      <ProductComparison products={products} />
     </section>
   )
 }
