@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { apiClient } from '../lib/apiClient'
 import { ProductReviews } from '../components/ProductReviews'
+import { ProductImage } from '../components/ProductImage'
 import { addCartItem } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
@@ -65,7 +66,7 @@ export function ProductDetailPage() {
     return (
       <section className="page page--detail" aria-labelledby="product-detail-title">
         <h1 id="product-detail-title">Product details</h1>
-        <p>Loading product...</p>
+        <p>Loading product…</p>
       </section>
     )
   }
@@ -88,7 +89,14 @@ export function ProductDetailPage() {
     <section className="product-detail-page" aria-labelledby="product-detail-title">
       <div className="product-hero-panel">
         <div className="product-detail-media product-detail-media--hero">
-          <img src={product.imageUrl} alt={product.name} width="960" height="720" />
+          <ProductImage
+            src={product.imageUrl}
+            alt={product.name}
+            brand={product.brand}
+            width="960"
+            height="720"
+            loading="eager"
+          />
         </div>
 
         <div className="purchase-panel" aria-label="Purchase panel">
@@ -139,7 +147,7 @@ export function ProductDetailPage() {
               {product.stockQty < 1
                 ? 'Out of stock'
                 : addToCartMutation.isPending
-                  ? 'Adding...'
+                  ? 'Adding…'
                   : 'Add to cart'}
             </button>
             <Link className="button button--secondary" to="/products">

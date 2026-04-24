@@ -166,4 +166,37 @@ describe('ProductsPage', () => {
 
     expect(await screen.findByText(/page 2 of 3/i)).toBeInTheDocument()
   })
+
+  it('shows an inline fallback instead of broken placeholder product imagery', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 'product-1',
+            sku: 'LAP-001',
+            name: 'MacBook Air 13',
+            brand: 'Apple',
+            cpu: 'Apple M3',
+            ramGb: 16,
+            storageGb: 512,
+            screenSize: '13.6',
+            price: 32990000,
+            stockQty: 12,
+            imageUrl: 'https://example.com/laptop.png',
+          },
+        ],
+        meta: {
+          page: 1,
+          limit: 12,
+          total: 1,
+          totalPages: 1,
+        },
+      },
+    })
+
+    renderProductsPage()
+
+    expect(await screen.findByText(/image unavailable/i)).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /macbook air 13/i })).not.toBeInTheDocument()
+  })
 })

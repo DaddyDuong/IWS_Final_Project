@@ -61,7 +61,7 @@ export function ProductFilters({ query, onQueryChange }) {
             name="q"
             type="search"
             value={query.q || ''}
-            placeholder="Name, CPU, or keyword"
+            placeholder="MacBook, M3, or gaming…"
             onChange={(event) => updateField('q', event.target.value)}
           />
         </label>
@@ -75,7 +75,7 @@ export function ProductFilters({ query, onQueryChange }) {
             name="brand"
             type="text"
             value={query.brand || ''}
-            placeholder="Apple, ASUS, Dell"
+            placeholder="Apple, ASUS, Dell…"
             onChange={(event) => updateField('brand', event.target.value)}
           />
         </label>
@@ -87,7 +87,7 @@ export function ProductFilters({ query, onQueryChange }) {
             name="cpu"
             type="text"
             value={query.cpu || ''}
-            placeholder="M3, Ryzen 7"
+            placeholder="M3, Ryzen 7…"
             onChange={(event) => updateField('cpu', event.target.value)}
           />
         </label>

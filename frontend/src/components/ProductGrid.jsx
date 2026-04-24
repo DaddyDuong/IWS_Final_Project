@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom'
 import { currencyFormatter } from '../lib/formatters'
+import { ProductImage } from './ProductImage'
 
 function ProductCard({ product }) {
   return (
     <li className="products-grid__item">
       <article className="product-card">
         <div className="product-card__media">
-          <img
+          <ProductImage
             src={product.imageUrl}
             alt={product.name}
+            brand={product.brand}
             loading="lazy"
             width="640"
             height="480"
@@ -37,7 +39,7 @@ function ProductCard({ product }) {
 
 export function ProductGrid({ products, meta, isLoading, isError, error, isFetching, onPageChange }) {
   if (isLoading) {
-    return <p className="catalog-feedback">Loading products...</p>
+    return <p className="catalog-feedback">Loading products…</p>
   }
 
   if (isError) {
@@ -74,7 +76,7 @@ export function ProductGrid({ products, meta, isLoading, isError, error, isFetch
         </button>
         <p>
           Page {meta.page} of {Math.max(meta.totalPages, 1)} ({meta.total} results)
-          {isFetching ? ' - Updating...' : ''}
+          {isFetching ? ' - Updating…' : ''}
         </p>
         <button
           type="button"
