@@ -3,29 +3,43 @@ import { Link } from 'react-router-dom'
 import { fetchProfile } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 
-const profileQuickLinks = [
-  {
-    to: '/profile/orders',
-    title: 'Order history',
-    description: 'Review order status and track each purchase.',
-  },
-  {
-    to: '/profile/addresses',
-    title: 'Saved addresses',
-    description: 'Manage your shipping details for faster checkout.',
-  },
-  {
-    to: '/cart',
-    title: 'Current cart',
-    description: 'Update items and quantities before you checkout.',
-  },
-]
+function getProfileQuickLinks(profile) {
+  const links = [
+    {
+      to: '/profile/orders',
+      title: 'Order history',
+      description: 'Review order status and track each purchase.',
+    },
+    {
+      to: '/profile/addresses',
+      title: 'Saved addresses',
+      description: 'Manage your shipping details for faster checkout.',
+    },
+    {
+      to: '/cart',
+      title: 'Current cart',
+      description: 'Update items and quantities before you checkout.',
+    },
+  ]
+
+  if (profile?.role === 'manager') {
+    links.push({
+      to: '/manager/products',
+      title: 'Manager products',
+      description: 'Create, update, and soft-delete products with internal APIs.',
+    })
+  }
+
+  return links
+}
 
 export function ProfilePage() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
     queryFn: fetchProfile,
   })
+
+  const profileQuickLinks = getProfileQuickLinks(profileQuery.data)
 
   return (
     <section className="page page--customer account-page" aria-labelledby="profile-title">

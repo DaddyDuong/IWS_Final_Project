@@ -365,6 +365,88 @@ describe('cart CRUD routes', () => {
     );
   });
 
+  it('supports pagination and sorting for GET /cart', async () => {
+    const { user, authHeader } = await createUserWithToken('paged-cart');
+    const productA = await createProduct('paged-a');
+    const productB = await createProduct('paged-b');
+    const productC = await createProduct('paged-c');
+
+    const firstItem = await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: productA.id,
+        quantity: 1,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    });
+
+    await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: productB.id,
+        quantity: 2,
+        createdAt: new Date('2026-01-02T00:00:00.000Z'),
+      },
+    });
+
+    await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: productC.id,
+        quantity: 3,
+        createdAt: new Date('2026-01-03T00:00:00.000Z'),
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/cart')
+      .query({
+        page: '2',
+        limit: '1',
+        sortBy: 'createdAt',
+        sortOrder: 'asc',
+      })
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.items).toHaveLength(1);
+    expect(res.body.data.items[0]).toEqual(
+      expect.objectContaining({
+        id: expect.not.stringMatching(firstItem.id),
+        quantity: 2,
+      }),
+    );
+    expect(res.body.meta).toEqual({
+      page: 2,
+      limit: 1,
+      total: 3,
+      totalPages: 3,
+    });
+  });
+
+  it('returns 400 when cart sortBy is invalid', async () => {
+    const { user, authHeader } = await createUserWithToken('cart-sort-invalid');
+    const product = await createProduct('cart-sort-invalid');
+
+    await prisma.cartItem.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        quantity: 1,
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/cart')
+      .query({ sortBy: 'quantity' })
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('rejects quantity above validation ceiling', async () => {
     const { authHeader } = await createUserWithToken('quantity-ceiling');
     const product = await createProduct('quantity-ceiling');

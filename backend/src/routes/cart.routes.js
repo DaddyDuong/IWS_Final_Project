@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { buildListMeta, buildListQuerySchema, getListSkip } from '../lib/listQuery.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middlewares/auth.js';
-import { validateBody } from '../middlewares/validate.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 
 const addCartItemSchema = z.object({
   productId: z.string().trim().min(1),
@@ -11,6 +12,11 @@ const addCartItemSchema = z.object({
 
 const updateCartItemSchema = z.object({
   quantity: z.number().int().positive().max(100),
+});
+
+const listCartQuerySchema = buildListQuerySchema({
+  sortByValues: ['createdAt', 'updatedAt'],
+  defaultSortBy: 'createdAt',
 });
 
 const cartItemSelect = {
@@ -37,21 +43,37 @@ export const cartRoutes = Router();
 
 cartRoutes.use(requireAuth);
 
-cartRoutes.get('/', async (req, res) => {
-  const items = await prisma.cartItem.findMany({
-    where: {
-      userId: req.authUser.id,
-      product: {
-        isDeleted: false,
-      },
+cartRoutes.get('/', validateQuery(listCartQuerySchema), async (req, res) => {
+  const query = req.validatedQuery;
+  const where = {
+    userId: req.authUser.id,
+    product: {
+      isDeleted: false,
     },
-    select: cartItemSelect,
-    orderBy: { createdAt: 'desc' },
-  });
+  };
+  const skip = getListSkip(query.page, query.limit);
+
+  const [items, total] = await prisma.$transaction([
+    prisma.cartItem.findMany({
+      where,
+      select: cartItemSelect,
+      orderBy: {
+        [query.sortBy]: query.sortOrder,
+      },
+      skip,
+      take: query.limit,
+    }),
+    prisma.cartItem.count({ where }),
+  ]);
 
   return res.json({
     success: true,
     data: { items },
+    meta: buildListMeta({
+      page: query.page,
+      limit: query.limit,
+      total,
+    }),
   });
 });
 

@@ -11,6 +11,14 @@ import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
 
 const emptyForm = { rating: '5', comment: '' }
+const initialReviewQuery = {
+  page: 1,
+  limit: 5,
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+  rating: undefined,
+  hasComment: undefined,
+}
 
 function getReviewerName(review) {
   return review.user?.fullName || review.user?.email || 'Verified customer'
@@ -27,12 +35,14 @@ export function ProductReviews({ productId }) {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState('')
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
-  const queryKey = ['product-reviews', productId]
+  const [reviewQuery, setReviewQuery] = useState(initialReviewQuery)
+  const reviewsQueryKey = ['product-reviews', productId, reviewQuery]
 
   const reviewsQuery = useQuery({
-    queryKey,
-    queryFn: () => fetchProductReviews(productId),
+    queryKey: reviewsQueryKey,
+    queryFn: () => fetchProductReviews(productId, reviewQuery),
     enabled: Boolean(productId),
+    placeholderData: (previousData) => previousData,
   })
 
   const profileQuery = useQuery({
@@ -41,7 +51,23 @@ export function ProductReviews({ productId }) {
     enabled: Boolean(token),
   })
 
-  const reviews = reviewsQuery.data || []
+  const reviewsPayload = reviewsQuery.data
+  const reviews = Array.isArray(reviewsPayload)
+    ? reviewsPayload
+    : reviewsPayload?.items || []
+  const meta = Array.isArray(reviewsPayload)
+    ? {
+        page: 1,
+        limit: reviews.length,
+        total: reviews.length,
+        totalPages: reviews.length > 0 ? 1 : 0,
+      }
+    : reviewsPayload?.meta || {
+        page: reviewQuery.page,
+        limit: reviewQuery.limit,
+        total: 0,
+        totalPages: 0,
+      }
   const profile = profileQuery.data
   const isEditing = Boolean(editingId)
 
@@ -50,7 +76,7 @@ export function ProductReviews({ productId }) {
     onSuccess: () => {
       setFeedback({ message: 'Review submitted.', type: 'success' })
       setForm(emptyForm)
-      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] })
     },
     onError: (error) => {
       setFeedback({
@@ -66,7 +92,7 @@ export function ProductReviews({ productId }) {
       setFeedback({ message: 'Review updated.', type: 'success' })
       setEditingId('')
       setForm(emptyForm)
-      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] })
     },
     onError: (error) => {
       setFeedback({
@@ -80,7 +106,7 @@ export function ProductReviews({ productId }) {
     mutationFn: (id) => deleteProductReview(id),
     onSuccess: () => {
       setFeedback({ message: 'Review deleted.', type: 'success' })
-      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] })
     },
     onError: (error) => {
       setFeedback({
@@ -127,6 +153,15 @@ export function ProductReviews({ productId }) {
   }
 
   const isSaving = createMutation.isPending || updateMutation.isPending
+  const hasPrevious = meta.page > 1
+  const hasNext = meta.page < meta.totalPages
+
+  function updateReviewQuery(patch) {
+    setReviewQuery((current) => ({
+      ...current,
+      ...patch,
+    }))
+  }
 
   return (
     <section className="reviews-panel" aria-labelledby="reviews-title">
@@ -161,6 +196,80 @@ export function ProductReviews({ productId }) {
           {formatApiError(reviewsQuery.error, 'Unable to load reviews right now.')}
         </p>
       ) : null}
+
+      <form className="product-filters" onSubmit={(event) => event.preventDefault()} aria-label="Review filters">
+        <div className="filter-row">
+          <label className="filter-field" htmlFor="reviews-sort">
+            Sort by
+            <select
+              id="reviews-sort"
+              value={`${reviewQuery.sortBy}:${reviewQuery.sortOrder}`}
+              onChange={(event) => {
+                const [sortBy, sortOrder] = event.target.value.split(':')
+                updateReviewQuery({ sortBy, sortOrder, page: 1 })
+              }}
+            >
+              <option value="createdAt:desc">Newest first</option>
+              <option value="createdAt:asc">Oldest first</option>
+              <option value="rating:desc">Highest rating</option>
+              <option value="rating:asc">Lowest rating</option>
+            </select>
+          </label>
+
+          <label className="filter-field" htmlFor="reviews-rating">
+            Score
+            <select
+              id="reviews-rating"
+              value={reviewQuery.rating ?? ''}
+              onChange={(event) => {
+                updateReviewQuery({
+                  rating: event.target.value ? Number(event.target.value) : undefined,
+                  page: 1,
+                })
+              }}
+            >
+              <option value="">All ratings</option>
+              <option value="5">5</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+            </select>
+          </label>
+
+          <label className="filter-field" htmlFor="reviews-comment-filter">
+            Comment
+            <select
+              id="reviews-comment-filter"
+              value={reviewQuery.hasComment === undefined ? 'all' : reviewQuery.hasComment ? 'with' : 'without'}
+              onChange={(event) => {
+                const value = event.target.value
+                updateReviewQuery({
+                  hasComment: value === 'all' ? undefined : value === 'with',
+                  page: 1,
+                })
+              }}
+            >
+              <option value="all">All comments</option>
+              <option value="with">With comment</option>
+              <option value="without">Without comment</option>
+            </select>
+          </label>
+
+          <label className="filter-field" htmlFor="reviews-limit">
+            Per page
+            <select
+              id="reviews-limit"
+              value={reviewQuery.limit}
+              onChange={(event) => updateReviewQuery({ limit: Number(event.target.value), page: 1 })}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+          </label>
+        </div>
+      </form>
 
       {!reviewsQuery.isLoading && !reviewsQuery.isError && reviews.length === 0 ? (
         <p className="catalog-feedback">No reviews yet. Be the first to share your experience.</p>
@@ -207,6 +316,31 @@ export function ProductReviews({ productId }) {
             )
           })}
         </ul>
+      ) : null}
+
+      {reviews.length > 0 ? (
+        <div className="pagination-bar" aria-live="polite">
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!hasPrevious || reviewsQuery.isFetching}
+            onClick={() => updateReviewQuery({ page: meta.page - 1 })}
+          >
+            Previous
+          </button>
+          <p>
+            Page {meta.page} of {Math.max(meta.totalPages, 1)} ({meta.total} reviews)
+            {reviewsQuery.isFetching ? ' - Updating…' : ''}
+          </p>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!hasNext || reviewsQuery.isFetching}
+            onClick={() => updateReviewQuery({ page: meta.page + 1 })}
+          >
+            Next
+          </button>
+        </div>
       ) : null}
 
       {!token ? <p className="catalog-feedback">Sign in to write a review.</p> : null}

@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { buildListMeta, buildListQuerySchema, getListSkip } from '../lib/listQuery.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { sanitizeRequestTextFields } from '../middlewares/sanitize.js';
-import { validateBody } from '../middlewares/validate.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 
 const createAddressSchema = z.object({
   receiver: z.string().trim().min(1),
@@ -27,6 +28,11 @@ const updateAddressSchema = z.object({
   message: 'At least one field is required',
 });
 
+const listAddressesQuerySchema = buildListQuerySchema({
+  sortByValues: ['createdAt', 'updatedAt', 'receiver'],
+  defaultSortBy: 'createdAt',
+});
+
 const addressSelect = {
   id: true,
   userId: true,
@@ -45,16 +51,32 @@ export const addressesRoutes = Router();
 
 addressesRoutes.use(requireAuth);
 
-addressesRoutes.get('/', async (req, res) => {
-  const addresses = await prisma.address.findMany({
-    where: { userId: req.authUser.id },
-    select: addressSelect,
-    orderBy: { createdAt: 'desc' },
-  });
+addressesRoutes.get('/', validateQuery(listAddressesQuerySchema), async (req, res) => {
+  const query = req.validatedQuery;
+  const where = { userId: req.authUser.id };
+  const skip = getListSkip(query.page, query.limit);
+
+  const [addresses, total] = await prisma.$transaction([
+    prisma.address.findMany({
+      where,
+      select: addressSelect,
+      orderBy: {
+        [query.sortBy]: query.sortOrder,
+      },
+      skip,
+      take: query.limit,
+    }),
+    prisma.address.count({ where }),
+  ]);
 
   return res.json({
     success: true,
     data: addresses,
+    meta: buildListMeta({
+      page: query.page,
+      limit: query.limit,
+      total,
+    }),
   });
 });
 

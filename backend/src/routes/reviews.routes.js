@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { buildListMeta, buildListQuerySchema, getListSkip } from '../lib/listQuery.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { sanitizeRequestTextFields } from '../middlewares/sanitize.js';
-import { validateBody } from '../middlewares/validate.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 
 const createReviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
@@ -15,6 +16,61 @@ const updateReviewSchema = z.object({
   comment: z.string().trim().min(1).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'At least one field is required',
+});
+
+function parseInteger(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? value : value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value.trim();
+
+  if (!/^[+-]?\d+$/.test(normalized)) {
+    return value;
+  }
+
+  return Number.parseInt(normalized, 10);
+}
+
+function parseBoolean(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return value;
+}
+
+const listReviewsQuerySchema = buildListQuerySchema({
+  sortByValues: ['createdAt', 'rating'],
+  defaultSortBy: 'createdAt',
+}).extend({
+  rating: z.preprocess(parseInteger, z.number().int().min(1).max(5).optional()),
+  hasComment: z.preprocess(parseBoolean, z.boolean().optional()),
 });
 
 const reviewSelect = {
@@ -39,7 +95,8 @@ function isReviewConflictError(err) {
 
 export const reviewsRoutes = Router();
 
-reviewsRoutes.get('/products/:id/reviews', async (req, res, next) => {
+reviewsRoutes.get('/products/:id/reviews', validateQuery(listReviewsQuerySchema), async (req, res, next) => {
+  const query = req.validatedQuery;
   const product = await prisma.product.findFirst({
     where: {
       id: req.params.id,
@@ -52,15 +109,45 @@ reviewsRoutes.get('/products/:id/reviews', async (req, res, next) => {
     return next({ status: 404, message: 'Product not found' });
   }
 
-  const reviews = await prisma.review.findMany({
-    where: { productId: req.params.id },
-    select: reviewSelect,
-    orderBy: { createdAt: 'desc' },
-  });
+  const where = { productId: req.params.id };
+
+  if (query.rating !== undefined) {
+    where.rating = query.rating;
+  }
+
+  if (query.hasComment === true) {
+    where.comment = {
+      not: '',
+    };
+  }
+
+  if (query.hasComment === false) {
+    where.comment = '';
+  }
+
+  const skip = getListSkip(query.page, query.limit);
+
+  const [reviews, total] = await prisma.$transaction([
+    prisma.review.findMany({
+      where,
+      select: reviewSelect,
+      orderBy: {
+        [query.sortBy]: query.sortOrder,
+      },
+      skip,
+      take: query.limit,
+    }),
+    prisma.review.count({ where }),
+  ]);
 
   return res.json({
     success: true,
     data: reviews,
+    meta: buildListMeta({
+      page: query.page,
+      limit: query.limit,
+      total,
+    }),
   });
 });
 

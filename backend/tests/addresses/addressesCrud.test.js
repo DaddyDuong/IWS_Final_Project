@@ -148,6 +148,78 @@ describe('addresses CRUD routes', () => {
     expect(remainingAddresses).toHaveLength(0);
   });
 
+  it('supports pagination and sorting for GET /addresses', async () => {
+    const { user, authHeader } = await createUserWithToken('address-paged');
+
+    await prisma.address.create({
+      data: {
+        userId: user.id,
+        ...buildAddressPayload('alpha'),
+        receiver: 'Alpha Receiver',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    });
+
+    await prisma.address.create({
+      data: {
+        userId: user.id,
+        ...buildAddressPayload('beta'),
+        receiver: 'Beta Receiver',
+        createdAt: new Date('2026-01-02T00:00:00.000Z'),
+      },
+    });
+
+    await prisma.address.create({
+      data: {
+        userId: user.id,
+        ...buildAddressPayload('gamma'),
+        receiver: 'Gamma Receiver',
+        createdAt: new Date('2026-01-03T00:00:00.000Z'),
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/addresses')
+      .query({
+        page: '2',
+        limit: '1',
+        sortBy: 'receiver',
+        sortOrder: 'asc',
+      })
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].receiver).toBe('Beta Receiver');
+    expect(res.body.meta).toEqual({
+      page: 2,
+      limit: 1,
+      total: 3,
+      totalPages: 3,
+    });
+  });
+
+  it('returns 400 when addresses sortBy is invalid', async () => {
+    const { user, authHeader } = await createUserWithToken('address-sort-invalid');
+
+    await prisma.address.create({
+      data: {
+        userId: user.id,
+        ...buildAddressPayload('address-sort-invalid'),
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/addresses')
+      .query({ sortBy: 'cityName' })
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('prevents cross-user update and delete', async () => {
     const { user: owner } = await createUserWithToken('address-owner-only');
     const { authHeader: otherUserToken } = await createUserWithToken('address-other-user');

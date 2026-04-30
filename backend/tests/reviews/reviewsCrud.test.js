@@ -168,6 +168,95 @@ describe('reviews CRUD routes', () => {
     expect(remainingReviews).toHaveLength(0);
   });
 
+  it('supports pagination, sorting, and filters when listing product reviews', async () => {
+    const product = await createProduct('query');
+    const { user: reviewerA } = await createUserWithToken('review-query-a');
+    const { user: reviewerB } = await createUserWithToken('review-query-b');
+    const { user: reviewerC } = await createUserWithToken('review-query-c');
+    const { user: reviewerD } = await createUserWithToken('review-query-d');
+
+    await prisma.review.createMany({
+      data: [
+        {
+          userId: reviewerA.id,
+          productId: product.id,
+          rating: 5,
+          comment: 'Excellent battery life',
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+        {
+          userId: reviewerB.id,
+          productId: product.id,
+          rating: 4,
+          comment: '',
+          createdAt: new Date('2026-01-02T00:00:00.000Z'),
+        },
+        {
+          userId: reviewerC.id,
+          productId: product.id,
+          rating: 3,
+          comment: 'Solid overall',
+          createdAt: new Date('2026-01-03T00:00:00.000Z'),
+        },
+        {
+          userId: reviewerD.id,
+          productId: product.id,
+          rating: 2,
+          comment: 'Not great for gaming',
+          createdAt: new Date('2026-01-04T00:00:00.000Z'),
+        },
+      ],
+    });
+
+    const res = await request(app)
+      .get(`/api/v1/products/${product.id}/reviews`)
+      .query({
+        page: '2',
+        limit: '1',
+        sortBy: 'rating',
+        sortOrder: 'desc',
+        hasComment: 'true',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0]).toEqual(
+      expect.objectContaining({
+        rating: 3,
+        comment: 'Solid overall',
+      }),
+    );
+    expect(res.body.meta).toEqual({
+      page: 2,
+      limit: 1,
+      total: 3,
+      totalPages: 3,
+    });
+  });
+
+  it('returns 400 when review list sortBy is invalid', async () => {
+    const product = await createProduct('query-sort-invalid');
+    const { user } = await createUserWithToken('review-query-sort-invalid');
+
+    await prisma.review.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        rating: 5,
+        comment: 'Good laptop',
+      },
+    });
+
+    const res = await request(app)
+      .get(`/api/v1/products/${product.id}/reviews`)
+      .query({ sortBy: 'updatedAt' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('prevents cross-user review mutations', async () => {
     const { user: owner } = await createUserWithToken('review-owner-only');
     const { authHeader: otherUserToken } = await createUserWithToken('review-other');

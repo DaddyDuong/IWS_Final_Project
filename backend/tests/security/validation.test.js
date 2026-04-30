@@ -18,4 +18,15 @@ describe('validation error envelope', () => {
       }),
     );
   });
+
+  it('rejects oversized JSON payloads before route handling', async () => {
+    const res = await request(app).post('/api/v1/auth/register').send({
+      email: 'large-body@example.com',
+      password: 'strong-password',
+      fullName: 'A'.repeat(150_000),
+    });
+
+    expect(res.status).toBe(413);
+    expect(res.body.success).toBe(false);
+  });
 });

@@ -294,6 +294,145 @@ describe('orders checkout and cancel routes', () => {
     expect(missingRes.body.error.code).toBe('ORDER_NOT_FOUND');
   });
 
+  it('supports pagination, sorting, and filters for GET /orders', async () => {
+    const { user: owner, authHeader: ownerToken } = await createUserWithToken('orders-query-owner');
+    const { user: otherUser } = await createUserWithToken('orders-query-other');
+    const ownerAddress = await createAddressForUser(owner.id, 'orders-query-owner');
+    const otherAddress = await createAddressForUser(otherUser.id, 'orders-query-other');
+
+    await prisma.order.createMany({
+      data: [
+        {
+          userId: owner.id,
+          addressId: ownerAddress.id,
+          status: 'pending',
+          subtotal: 3000000,
+          shippingFee: 0,
+          total: 3000000,
+          placedAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+        {
+          userId: owner.id,
+          addressId: ownerAddress.id,
+          status: 'processing',
+          subtotal: 1000000,
+          shippingFee: 0,
+          total: 1000000,
+          placedAt: new Date('2026-01-02T00:00:00.000Z'),
+        },
+        {
+          userId: owner.id,
+          addressId: ownerAddress.id,
+          status: 'shipped',
+          subtotal: 2000000,
+          shippingFee: 0,
+          total: 2000000,
+          placedAt: new Date('2026-01-03T00:00:00.000Z'),
+        },
+        {
+          userId: owner.id,
+          addressId: ownerAddress.id,
+          status: 'pending',
+          subtotal: 4000000,
+          shippingFee: 0,
+          total: 4000000,
+          placedAt: new Date('2026-01-04T00:00:00.000Z'),
+        },
+        {
+          userId: otherUser.id,
+          addressId: otherAddress.id,
+          status: 'pending',
+          subtotal: 9000000,
+          shippingFee: 0,
+          total: 9000000,
+          placedAt: new Date('2026-01-05T00:00:00.000Z'),
+        },
+      ],
+    });
+
+    const res = await request(app)
+      .get('/api/v1/orders')
+      .query({
+        page: '2',
+        limit: '1',
+        sortBy: 'total',
+        sortOrder: 'asc',
+        status: 'pending',
+        from: '2026-01-01T00:00:00.000Z',
+        to: '2026-01-05T00:00:00.000Z',
+        minTotal: '1000000',
+        maxTotal: '5000000',
+      })
+      .set('Authorization', ownerToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0]).toEqual(
+      expect.objectContaining({
+        userId: owner.id,
+        status: 'pending',
+        total: 4000000,
+      }),
+    );
+    expect(res.body.meta).toEqual({
+      page: 2,
+      limit: 1,
+      total: 2,
+      totalPages: 2,
+    });
+  });
+
+  it('returns 400 when orders sortBy is invalid', async () => {
+    const { user, authHeader } = await createUserWithToken('orders-sort-invalid');
+    const address = await createAddressForUser(user.id, 'orders-sort-invalid');
+
+    await prisma.order.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+        status: 'pending',
+        subtotal: 1000000,
+        shippingFee: 0,
+        total: 1000000,
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/orders')
+      .query({ sortBy: 'createdAt' })
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns 400 when minTotal is greater than maxTotal', async () => {
+    const { user, authHeader } = await createUserWithToken('orders-total-range-invalid');
+    const address = await createAddressForUser(user.id, 'orders-total-range-invalid');
+
+    await prisma.order.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+        status: 'pending',
+        subtotal: 1000000,
+        shippingFee: 0,
+        total: 1000000,
+      },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/orders')
+      .query({ minTotal: '5000', maxTotal: '1000' })
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('cancels own pending order and restores stock', async () => {
     const { user, authHeader } = await createUserWithToken('cancel-success');
     const address = await createAddressForUser(user.id, 'cancel-success');

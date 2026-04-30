@@ -1,12 +1,81 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { buildListMeta, buildListQuerySchema, getListSkip } from '../lib/listQuery.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middlewares/auth.js';
-import { validateBody } from '../middlewares/validate.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 
 const checkoutSchema = z.object({
   addressId: z.string().trim().min(1),
 });
+
+const orderStatusSchema = z.enum(['pending', 'processing', 'shipped', 'delivered', 'canceled']);
+
+function parseInteger(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? value : value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value.trim();
+
+  if (!/^[+-]?\d+$/.test(normalized)) {
+    return value;
+  }
+
+  return Number.parseInt(normalized, 10);
+}
+
+function parseDate(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return value;
+  }
+
+  return new Date(normalized);
+}
+
+const listOrdersQuerySchema = buildListQuerySchema({
+  sortByValues: ['placedAt', 'total', 'status'],
+  defaultSortBy: 'placedAt',
+}).extend({
+  status: orderStatusSchema.optional(),
+  from: z.preprocess(parseDate, z.date().optional()),
+  to: z.preprocess(parseDate, z.date().optional()),
+  minTotal: z.preprocess(parseInteger, z.number().int().min(0).optional()),
+  maxTotal: z.preprocess(parseInteger, z.number().int().min(0).optional()),
+}).refine(
+  (query) => query.minTotal === undefined || query.maxTotal === undefined || query.minTotal <= query.maxTotal,
+  {
+    message: 'minTotal must be less than or equal to maxTotal',
+    path: ['minTotal'],
+  },
+).refine(
+  (query) => query.from === undefined || query.to === undefined || query.from <= query.to,
+  {
+    message: 'from must be before or equal to to',
+    path: ['from'],
+  },
+);
 
 const cancellableStatuses = ['pending', 'processing'];
 
@@ -168,16 +237,63 @@ ordersRoutes.post('/checkout', validateBody(checkoutSchema), async (req, res, ne
   }
 });
 
-ordersRoutes.get('/', async (req, res) => {
-  const orders = await prisma.order.findMany({
-    where: { userId: req.authUser.id },
-    select: orderSelect,
-    orderBy: { placedAt: 'desc' },
-  });
+ordersRoutes.get('/', validateQuery(listOrdersQuerySchema), async (req, res) => {
+  const query = req.validatedQuery;
+  const where = {
+    userId: req.authUser.id,
+  };
+
+  if (query.status) {
+    where.status = query.status;
+  }
+
+  if (query.from !== undefined || query.to !== undefined) {
+    where.placedAt = {};
+
+    if (query.from !== undefined) {
+      where.placedAt.gte = query.from;
+    }
+
+    if (query.to !== undefined) {
+      where.placedAt.lte = query.to;
+    }
+  }
+
+  if (query.minTotal !== undefined || query.maxTotal !== undefined) {
+    where.total = {};
+
+    if (query.minTotal !== undefined) {
+      where.total.gte = query.minTotal;
+    }
+
+    if (query.maxTotal !== undefined) {
+      where.total.lte = query.maxTotal;
+    }
+  }
+
+  const skip = getListSkip(query.page, query.limit);
+
+  const [orders, total] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      select: orderSelect,
+      orderBy: {
+        [query.sortBy]: query.sortOrder,
+      },
+      skip,
+      take: query.limit,
+    }),
+    prisma.order.count({ where }),
+  ]);
 
   return res.json({
     success: true,
     data: orders,
+    meta: buildListMeta({
+      page: query.page,
+      limit: query.limit,
+      total,
+    }),
   });
 });
 

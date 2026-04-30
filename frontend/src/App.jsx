@@ -1,12 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { RequireAuth } from './components/RequireAuth'
+import { RequireManager } from './components/RequireManager'
 import { AddressesPage } from './pages/AddressesPage'
 import { CartPage } from './pages/CartPage'
 import { CheckoutPage } from './pages/CheckoutPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { ManagerProductsPage } from './pages/ManagerProductsPage'
 import { OrderDetailPage } from './pages/OrderDetailPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
@@ -34,6 +36,10 @@ function App() {
           <Route path="profile/orders" element={<OrdersPage />} />
           <Route path="profile/orders/:id" element={<OrderDetailPage />} />
           <Route path="profile/addresses" element={<AddressesPage />} />
+
+          <Route element={<RequireManager />}>
+            <Route path="manager/products" element={<ManagerProductsPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

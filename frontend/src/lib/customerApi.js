@@ -4,6 +4,21 @@ function getPayloadData(response) {
   return response?.data?.data
 }
 
+function getListMeta(response, fallbackCount = 0) {
+  const meta = response?.data?.meta
+
+  if (!meta) {
+    return {
+      page: 1,
+      limit: fallbackCount,
+      total: fallbackCount,
+      totalPages: fallbackCount > 0 ? 1 : 0,
+    }
+  }
+
+  return meta
+}
+
 export async function fetchProfile() {
   const response = await apiClient.get('/users/me')
   return getPayloadData(response) ?? null
@@ -55,10 +70,16 @@ export async function checkoutWithAddress(addressId) {
   return getPayloadData(response) ?? null
 }
 
-export async function fetchOrders() {
-  const response = await apiClient.get('/orders')
+export async function fetchOrders(query = {}) {
+  const response = await apiClient.get('/orders', {
+    params: query,
+  })
   const payload = getPayloadData(response)
-  return Array.isArray(payload) ? payload : []
+  const items = Array.isArray(payload) ? payload : []
+  return {
+    items,
+    meta: getListMeta(response, items.length),
+  }
 }
 
 export async function fetchOrderById(id) {
@@ -71,10 +92,16 @@ export async function cancelOrder(id) {
   return getPayloadData(response) ?? null
 }
 
-export async function fetchProductReviews(productId) {
-  const response = await apiClient.get(`/products/${productId}/reviews`)
+export async function fetchProductReviews(productId, query = {}) {
+  const response = await apiClient.get(`/products/${productId}/reviews`, {
+    params: query,
+  })
   const payload = getPayloadData(response)
-  return Array.isArray(payload) ? payload : []
+  const items = Array.isArray(payload) ? payload : []
+  return {
+    items,
+    meta: getListMeta(response, items.length),
+  }
 }
 
 export async function createProductReview({ productId, payload }) {
@@ -89,5 +116,33 @@ export async function updateProductReview({ id, payload }) {
 
 export async function deleteProductReview(id) {
   const response = await apiClient.delete(`/reviews/${id}`)
+  return getPayloadData(response) ?? null
+}
+
+export async function fetchManagerCatalog(query = {}) {
+  const response = await apiClient.get('/products', {
+    params: query,
+  })
+
+  const payload = getPayloadData(response)
+  const items = Array.isArray(payload) ? payload : []
+  return {
+    items,
+    meta: getListMeta(response, items.length),
+  }
+}
+
+export async function createInternalProduct(payload) {
+  const response = await apiClient.post('/internal/products', payload)
+  return getPayloadData(response) ?? null
+}
+
+export async function updateInternalProduct({ id, payload }) {
+  const response = await apiClient.patch(`/internal/products/${id}`, payload)
+  return getPayloadData(response) ?? null
+}
+
+export async function deleteInternalProduct(id) {
+  const response = await apiClient.delete(`/internal/products/${id}`)
   return getPayloadData(response) ?? null
 }
