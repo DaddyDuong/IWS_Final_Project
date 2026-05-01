@@ -1201,3 +1201,49 @@ export const mockProducts = [
     "storage": "1024GB SSD"
   }
 ];
+
+export const mockCartItems = [
+  {
+    id: 'cart_1',
+    productId: 'dell_1',
+    quantity: 1,
+  },
+  {
+    id: 'cart_2',
+    productId: 'asus_3',
+    quantity: 2,
+  },
+  {
+    id: 'cart_3',
+    productId: 'lenovo_6',
+    quantity: 1,
+  },
+  {
+    id: 'cart_4',
+    productId: 'acer_9',
+    quantity: 3,
+  },
+];
+
+export const mockAddresses = [
+  {
+    id: 'addr_1',
+    receiver: 'Nguyen Van A',
+    phone: '0901234567',
+    line1: '12 Nguyen Hue Street',
+    ward: 'Ben Nghe Ward',
+    district: 'District 1',
+    city: 'Ho Chi Minh City',
+    isDefault: true,
+  },
+  {
+    id: 'addr_2',
+    receiver: 'Tran Thi B',
+    phone: '0912345678',
+    line1: '45 Le Loi Street',
+    ward: 'Ben Thanh Ward',
+    district: 'District 1',
+    city: 'Ho Chi Minh City',
+    isDefault: false,
+  },
+];

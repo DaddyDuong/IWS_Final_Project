@@ -1,46 +1,31 @@
-import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
-import { checkoutWithAddress, fetchAddresses, fetchCart } from '../lib/customerApi'
-import { currencyFormatter, formatApiError } from '../lib/formatters'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { currencyFormatter } from '../lib/formatters'
+import { mockAddresses, mockCartItems, mockProducts } from '../lib/mockData'
 
 export function CheckoutPage() {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [selectedAddressId, setSelectedAddressId] = useState('')
   const [feedback, setFeedback] = useState('')
 
-  const cartQuery = useQuery({
-    queryKey: ['cart'],
-    queryFn: fetchCart,
-  })
-
-  const addressesQuery = useQuery({
-    queryKey: ['addresses'],
-    queryFn: fetchAddresses,
-  })
-
-  const checkoutMutation = useMutation({
-    mutationFn: checkoutWithAddress,
-    onSuccess: (order) => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] })
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      navigate(order?.id ? `/profile/orders/${order.id}` : '/profile/orders')
-    },
-    onError: (error) => {
-      setFeedback(formatApiError(error, 'Checkout failed. Please try again.'))
-    },
-  })
-
-  const addresses = addressesQuery.data || []
-  const items = cartQuery.data || []
+  const addresses = mockAddresses
+  const items = useMemo(
+    () =>
+      mockCartItems
+        .map((item) => {
+          const product = mockProducts.find((entry) => entry.id === item.productId)
+          return product ? { ...item, product } : null
+        })
+        .filter(Boolean),
+    []
+  )
   const defaultAddressId = addresses.find((address) => address.isDefault)?.id || addresses[0]?.id || ''
   const effectiveSelectedAddressId =
     addresses.some((address) => address.id === selectedAddressId) ? selectedAddressId : defaultAddressId
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
+  const shippingFee = 0
+  const grandTotal = subtotal + shippingFee
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -50,7 +35,10 @@ export function CheckoutPage() {
       return
     }
 
-    checkoutMutation.mutate(effectiveSelectedAddressId)
+    const address = addresses.find((entry) => entry.id === effectiveSelectedAddressId)
+    setFeedback(
+      `Mock order placed for ${address?.receiver ?? 'your selected address'}. This checkout is powered by mockData.js.`
+    )
   }
 
   return (
@@ -65,25 +53,11 @@ export function CheckoutPage() {
         </p>
       ) : null}
 
-      {cartQuery.isLoading || addressesQuery.isLoading ? (
-        <p role="status" aria-live="polite">
-          Preparing your checkout...
-        </p>
-      ) : null}
+      <p className="catalog-feedback catalog-feedback--success" role="status" aria-live="polite">
+        This checkout is powered by mock data from <strong>mockData.js</strong> so you can test the UI offline.
+      </p>
 
-      {cartQuery.isError ? (
-        <p className="catalog-feedback catalog-feedback--error">
-          {formatApiError(cartQuery.error, 'Unable to load cart items.')}
-        </p>
-      ) : null}
-
-      {addressesQuery.isError ? (
-        <p className="catalog-feedback catalog-feedback--error">
-          {formatApiError(addressesQuery.error, 'Unable to load saved addresses.')}
-        </p>
-      ) : null}
-
-      {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
+      {items.length === 0 ? (
         <div className="catalog-feedback">
           <p>Your cart is empty. Add items before checkout.</p>
           <div className="cta-row">
@@ -131,16 +105,45 @@ export function CheckoutPage() {
           </section>
 
           <aside className="checkout-card checkout-card--summary" aria-label="Order summary">
-            <h2>Order summary</h2>
-            <p>{totalItems} item(s)</p>
-            <p>Shipping fee: Free</p>
-            <p>
-              Total: <strong>{currencyFormatter.format(subtotal)}</strong>
-            </p>
+            <div className="checkout-summary__header">
+              <div>
+                <p className="checkout-summary__eyebrow">Order summary</p>
+                <h2>Review your items</h2>
+              </div>
+              <span className="checkout-summary__badge">{totalItems} items</span>
+            </div>
+
+            <div className="checkout-summary__items" aria-label="Items in your order">
+              {items.map((item) => (
+                <div key={item.id} className="checkout-summary__item">
+                  <div>
+                    <strong>{item.product.name}</strong>
+                    <span>Qty {item.quantity}</span>
+                  </div>
+                  <strong>{currencyFormatter.format(item.product.price * item.quantity)}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="checkout-summary__totals">
+              <div>
+                <span>Subtotal</span>
+                <strong>{currencyFormatter.format(subtotal)}</strong>
+              </div>
+              <div>
+                <span>Shipping fee</span>
+                <strong>{shippingFee === 0 ? 'Free' : currencyFormatter.format(shippingFee)}</strong>
+              </div>
+              <div className="checkout-summary__grand-total">
+                <span>Total</span>
+                <strong>{currencyFormatter.format(grandTotal)}</strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="button button--primary"
-              disabled={checkoutMutation.isPending || items.length === 0 || addresses.length === 0}
+              disabled={items.length === 0 || addresses.length === 0}
             >
               Place order
             </button>

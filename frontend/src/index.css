@@ -1889,6 +1889,8 @@ a {
 .page--customer {
   display: grid;
   gap: 18px;
+  margin-left: 2vw;
+  margin-right: 2vw;
 }
 
 .customer-card {
@@ -2058,7 +2060,100 @@ a {
 .checkout-card--summary {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 14px;
+  position: sticky;
+  top: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.checkout-summary__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.checkout-summary__eyebrow {
+  margin: 0 0 4px;
+  color: var(--sk-text-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.checkout-summary__header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.checkout-summary__badge {
+  border-radius: var(--sk-radius-pill);
+  padding: 6px 10px;
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--sk-link);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.checkout-summary__items {
+  display: grid;
+  gap: 10px;
+  padding: 2px 0 10px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.checkout-summary__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #f7f8fa;
+}
+
+.checkout-summary__item strong {
+  display: block;
+  color: var(--sk-text);
+}
+
+.checkout-summary__item span {
+  display: block;
+  margin-top: 4px;
+  color: var(--sk-text-muted);
+  font-size: 13px;
+}
+
+.checkout-summary__totals {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.checkout-summary__totals > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--sk-text);
+}
+
+.checkout-summary__totals span {
+  color: var(--sk-text-muted);
+}
+
+.checkout-summary__grand-total {
+  padding-top: 12px;
+  margin-top: 2px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 18px;
 }
 
 .address-options {
