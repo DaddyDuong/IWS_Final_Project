@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom'
 import { currencyFormatter } from '../lib/formatters'
 import { ProductImage } from './ProductImage'
 
-function ProductCard({ product }) {
+export function ProductCard({ product }) {
   return (
-    <li className="products-grid__item">
+    <li className="products-grid__item" style={{ display: 'block' }}>
       <article className="product-card">
-        <div className="product-card__media">
+        <Link to={`/products/${product.id}`} className="product-card__media" aria-label={`View details for ${product.name}`}>
           <ProductImage
             src={product.imageUrl}
             alt={product.name}
@@ -15,20 +15,21 @@ function ProductCard({ product }) {
             width="640"
             height="480"
           />
-        </div>
+        </Link>
         <div className="product-card__body">
-          <p className="eyebrow">{product.brand}</p>
+          <div className="product-tags">
+            <span className="product-tag">{product.condition || 'New 100%'}</span>
+          </div>
           <h2>{product.name}</h2>
           <p className="product-specs" aria-label="Laptop specifications">
             {product.cpu} - {product.ramGb}GB RAM - {product.storageGb}GB SSD
           </p>
           <div className="product-card__footer">
-            <strong>{currencyFormatter.format(product.price)}</strong>
-            <span className={product.stockQty > 0 ? 'stock stock--available' : 'stock stock--empty'}>
-              {product.stockQty > 0 ? `${product.stockQty} in stock` : 'Out of stock'}
-            </span>
+            <strong className="product-price">
+              {new Intl.NumberFormat('vi-VN').format(product.price)}₫
+            </strong>
           </div>
-          <Link className="button button--primary" to={`/products/${product.id}`}>
+          <Link className="button button--primary" to={`/products/${product.id}`} style={{ marginTop: '0.5vw', width: '100%' }}>
             View details
           </Link>
         </div>
@@ -54,8 +55,8 @@ export function ProductGrid({ products, meta, isLoading, isError, error, isFetch
     )
   }
 
-  const hasPrevious = meta.page > 1
-  const hasNext = meta.page < meta.totalPages
+  const hasPrevious = meta?.page > 1
+  const hasNext = meta?.page < meta?.totalPages
 
   return (
     <>
@@ -65,28 +66,30 @@ export function ProductGrid({ products, meta, isLoading, isError, error, isFetch
         ))}
       </ul>
 
-      <div className="pagination-bar" aria-live="polite">
-        <button
-          type="button"
-          className="button button--secondary"
-          disabled={!hasPrevious || isFetching}
-          onClick={() => onPageChange(meta.page - 1)}
-        >
-          Previous
-        </button>
-        <p>
-          Page {meta.page} of {Math.max(meta.totalPages, 1)} ({meta.total} results)
-          {isFetching ? ' - Updating…' : ''}
-        </p>
-        <button
-          type="button"
-          className="button button--secondary"
-          disabled={!hasNext || isFetching}
-          onClick={() => onPageChange(meta.page + 1)}
-        >
-          Next
-        </button>
-      </div>
+      {meta && (
+        <div className="pagination-bar" aria-live="polite">
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!hasPrevious || isFetching}
+            onClick={() => onPageChange(meta.page - 1)}
+          >
+            Previous
+          </button>
+          <p>
+            Page {meta.page} of {Math.max(meta.totalPages, 1)} ({meta.total} results)
+            {isFetching ? ' - Updating…' : ''}
+          </p>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!hasNext || isFetching}
+            onClick={() => onPageChange(meta.page + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </>
   )
 }

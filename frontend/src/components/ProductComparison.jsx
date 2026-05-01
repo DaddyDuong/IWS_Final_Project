@@ -37,10 +37,7 @@ export function ProductComparison({ products }) {
                 <dt>Price</dt>
                 <dd>{currencyFormatter.format(product.price)}</dd>
               </div>
-              <div>
-                <dt>Stock</dt>
-                <dd>{product.stockQty > 0 ? `${product.stockQty} available` : 'Out of stock'}</dd>
-              </div>
+
             </dl>
             <Link className="inline-link" to={`/products/${product.id}`}>
               View details

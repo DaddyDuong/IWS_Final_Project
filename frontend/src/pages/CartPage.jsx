@@ -136,7 +136,7 @@ export function CartPage() {
                     id={`quantity-${item.id}`}
                     type="number"
                     min="1"
-                    max={item.product.stockQty}
+                    max={999}
                     value={draftQuantities[item.id] ?? String(item.quantity)}
                     onChange={(event) => handleQuantityChange(item.id, event.target.value)}
                   />

@@ -15,6 +15,9 @@ import { ProductsPage } from './pages/ProductsPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 
+const BASE_WIDTH = 2560;
+const BASE_HEIGHT = 1278;
+
 function App() {
   return (
     <Routes>

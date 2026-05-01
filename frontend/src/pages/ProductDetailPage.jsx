@@ -7,6 +7,7 @@ import { ProductImage } from '../components/ProductImage'
 import { addCartItem } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
+import { mockProducts } from '../lib/mockData'
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -15,8 +16,12 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 })
 
 async function fetchProductById(productId) {
-  const response = await apiClient.get(`/products/${productId}`)
-  return response.data.data
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const product = mockProducts.find((p) => p.id === productId)
+      resolve(product)
+    }, 500)
+  })
 }
 
 export function ProductDetailPage() {
@@ -26,6 +31,7 @@ export function ProductDetailPage() {
   const { id } = useParams()
   const token = useAuthStore((state) => state.token)
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   const productQuery = useQuery({
     queryKey: ['product', id],
@@ -87,16 +93,53 @@ export function ProductDetailPage() {
 
   return (
     <section className="product-detail-page" aria-labelledby="product-detail-title">
+      <div className="top-navigation-bar">
+        <Link to="/products" className="btn-back-catalog">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Catalog
+        </Link>
+        <h1 className="page-header-title">Product Details</h1>
+        <div style={{ width: '130px' }}></div>
+      </div>
+
       <div className="product-hero-panel">
-        <div className="product-detail-media product-detail-media--hero">
-          <ProductImage
-            src={product.imageUrl}
-            alt={product.name}
-            brand={product.brand}
-            width="960"
-            height="720"
-            loading="eager"
-          />
+        <div className="product-gallery-container">
+          <div className="product-gallery-section">
+            <div className="thumbnail-list">
+              {[0, 1, 2, 3, 4].map((index) => (
+                <button
+                  key={index}
+                  className={`thumbnail-btn ${activeImageIndex === index ? 'active' : ''}`}
+                  type="button"
+                  aria-label={`View image ${index + 1}`}
+                  onClick={() => setActiveImageIndex(index)}
+                >
+                  <img src={product.imageUrl} alt={`${product.name} thumbnail ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+            <div className="product-detail-media product-detail-media--hero">
+              <ProductImage
+                src={product.imageUrl}
+                alt={product.name}
+                brand={product.brand}
+                width="960"
+                height="720"
+                loading="eager"
+              />
+            </div>
+          </div>
+          <div className="product-features-bar">
+            <span>Premium Build</span>
+            <div className="feature-divider"></div>
+            <span>Ultra portable</span>
+            <div className="feature-divider"></div>
+            <span>Fast Charging</span>
+            <div className="feature-divider"></div>
+            <span>2-year Warranty</span>
+          </div>
         </div>
 
         <div className="purchase-panel" aria-label="Purchase panel">
@@ -118,25 +161,6 @@ export function ProductDetailPage() {
             </p>
           ) : null}
 
-          <dl className="spec-list">
-            <div>
-              <dt>CPU</dt>
-              <dd>{product.cpu}</dd>
-            </div>
-            <div>
-              <dt>RAM</dt>
-              <dd>{product.ramGb} GB</dd>
-            </div>
-            <div>
-              <dt>Storage</dt>
-              <dd>{product.storageGb} GB SSD</dd>
-            </div>
-            <div>
-              <dt>Screen</dt>
-              <dd>{product.screenSize} inch</dd>
-            </div>
-          </dl>
-
           <div className="cta-row">
             <button
               type="button"
@@ -155,6 +179,76 @@ export function ProductDetailPage() {
             </Link>
           </div>
         </div>
+      </div>
+
+      <div className="specifications-panel">
+        <h2>Specifications</h2>
+        <dl className="specifications-grid" aria-label="Detailed specifications">
+          <div>
+            <dt>CPU</dt>
+            <dd>{product.cpu}</dd>
+          </div>
+          <div>
+            <dt>RAM</dt>
+            <dd>{product.ram || `${product.ramGb} GB`}</dd>
+          </div>
+          <div>
+            <dt>Storage</dt>
+            <dd>{product.storage || `${product.storageGb} GB SSD`}</dd>
+          </div>
+          <div>
+            <dt>Screen</dt>
+            <dd>{product.screen || `${product.screenSize} inch`}</dd>
+          </div>
+          {product.graphic && (
+            <div>
+              <dt>Graphics</dt>
+              <dd>{product.graphic}</dd>
+            </div>
+          )}
+          {product.battery && (
+            <div>
+              <dt>Battery</dt>
+              <dd>{product.battery}</dd>
+            </div>
+          )}
+          {product.weight && (
+            <div>
+              <dt>Weight</dt>
+              <dd>{product.weight}</dd>
+            </div>
+          )}
+          {product.dimensions && (
+            <div>
+              <dt>Dimensions</dt>
+              <dd>{product.dimensions}</dd>
+            </div>
+          )}
+          {product.os && (
+            <div>
+              <dt>OS</dt>
+              <dd>{product.os}</dd>
+            </div>
+          )}
+          {product.port && (
+            <div>
+              <dt>Ports</dt>
+              <dd>{product.port}</dd>
+            </div>
+          )}
+          {product.connectivity && (
+            <div>
+              <dt>Connectivity</dt>
+              <dd>{product.connectivity}</dd>
+            </div>
+          )}
+          {product.keyboard && (
+            <div>
+              <dt>Keyboard</dt>
+              <dd>{product.keyboard}</dd>
+            </div>
+          )}
+        </dl>
       </div>
 
       <ProductReviews productId={product.id} />
