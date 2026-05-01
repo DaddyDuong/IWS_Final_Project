@@ -1,0 +1,34 @@
+.wrapper {
+  display: grid;
+  width: 100%;
+}
+
+.loading {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.empty {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.empty h3 {
+  color: var(--text-primary);
+  font: var(--font-h3);
+  margin: 0;
+}
+
+.empty p {
+  color: var(--text-secondary);
+  margin: 0;
+}

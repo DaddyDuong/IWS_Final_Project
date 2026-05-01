@@ -1,0 +1,63 @@
+.sidebar {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.nav {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 0.35rem;
+  padding: var(--space-sm);
+}
+
+.link {
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font: var(--font-body);
+  padding: 0.8rem 0.9rem;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--surface-hover);
+}
+
+.active {
+  background: color-mix(in srgb, var(--accent) 10%, white);
+  color: var(--text-primary);
+}
+
+.helpCard {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+}
+
+.helpCard h4 {
+  color: var(--text-primary);
+  font: var(--font-h4);
+  margin: 0;
+}
+
+.helpCard p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.helpLink {
+  align-items: center;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  display: inline-flex;
+  font-weight: 500;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.8rem;
+  text-decoration: none;
+}

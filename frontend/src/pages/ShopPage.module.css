@@ -1,0 +1,14 @@
+.pageSection {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.paginationWrap {
+  margin-top: var(--space-md);
+}

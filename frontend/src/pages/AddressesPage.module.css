@@ -1,0 +1,77 @@
+.layout {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.content {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.sectionTitle {
+  font: var(--font-h3);
+  margin-bottom: var(--space-sm);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.checkboxLabel {
+  align-items: center;
+  color: var(--text-secondary);
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.checkboxLabel input {
+  accent-color: var(--accent);
+  min-height: auto;
+  width: auto;
+}
+
+.cards {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: 1fr auto;
+  padding: var(--space-md);
+}
+
+.receiver {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.cardActions {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.editingCard {
+  border-color: color-mix(in srgb, var(--accent) 48%, white);
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    grid-template-columns: 1fr;
+  }
+
+  .cardActions {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+}

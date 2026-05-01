@@ -1,0 +1,73 @@
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  position: relative;
+}
+
+.compareToggle {
+  align-items: center;
+  background: var(--surface-card);
+  border: 1px solid var(--stroke-strong);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 700;
+  height: 1.8rem;
+  justify-content: center;
+  position: absolute;
+  right: var(--space-md);
+  top: var(--space-md);
+  width: 1.8rem;
+}
+
+.compared {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.image {
+  aspect-ratio: 4 / 3;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  width: 100%;
+}
+
+.info {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.info h3 {
+  color: var(--text-primary);
+  font: var(--font-h4);
+}
+
+.meta {
+  color: var(--text-secondary);
+  font-size: 0.93rem;
+}
+
+.price {
+  color: var(--text-primary);
+  font-size: 1.7rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+}
+
+.stock {
+  color: var(--success);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.outOfStock {
+  color: var(--danger);
+}

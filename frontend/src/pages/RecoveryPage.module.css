@@ -1,0 +1,46 @@
+.pageSection {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.columns {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sectionTitle {
+  font: var(--font-h3);
+  margin-bottom: var(--space-xs);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-md);
+  margin: var(--space-md) 0;
+}
+
+.demoTokenCard {
+  background: var(--surface-muted);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+}
+
+.demoTokenCard code {
+  background: white;
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--radius-sm);
+  display: block;
+  padding: 0.7rem;
+  word-break: break-all;
+}
+
+@media (max-width: 920px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
