@@ -1,177 +1,163 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchCart, removeCartItem, updateCartItem } from '../lib/customerApi'
-import { currencyFormatter, formatApiError } from '../lib/formatters'
+import { AlertBox } from '../components/shared/AlertBox'
+import { StateBlock } from '../components/shared/StateBlock'
+import { useCartMutations, useCartQuery } from '../hooks/useDomainData'
+import { formatMoney } from '../utils/format'
+import styles from './CartPage.module.css'
 
 export function CartPage() {
-  const queryClient = useQueryClient()
+  const cartQuery = useCartQuery()
+  const { updateMutation, removeMutation } = useCartMutations()
+
   const [draftQuantities, setDraftQuantities] = useState({})
-  const [feedback, setFeedback] = useState({ message: '', type: 'success' })
+  const [feedback, setFeedback] = useState(null)
 
-  const cartQuery = useQuery({
-    queryKey: ['cart'],
-    queryFn: fetchCart,
-  })
-
-  const updateItemMutation = useMutation({
-    mutationFn: updateCartItem,
-    onSuccess: () => {
-      setFeedback({ message: 'Cart item updated.', type: 'success' })
-      setDraftQuantities({})
-      queryClient.invalidateQueries({ queryKey: ['cart'] })
-    },
-    onError: (error) => {
-      setFeedback({
-        message: formatApiError(error, 'Unable to update this cart item.'),
-        type: 'error',
-      })
-    },
-  })
-
-  const removeItemMutation = useMutation({
-    mutationFn: removeCartItem,
-    onSuccess: () => {
-      setFeedback({ message: 'Item removed from cart.', type: 'success' })
-      queryClient.invalidateQueries({ queryKey: ['cart'] })
-    },
-    onError: (error) => {
-      setFeedback({
-        message: formatApiError(error, 'Unable to remove this cart item.'),
-        type: 'error',
-      })
-    },
-  })
-
-  const items = cartQuery.data || []
+  const items = cartQuery.data?.items ?? []
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
-  function handleQuantityChange(itemId, nextValue) {
-    setDraftQuantities((current) => ({
-      ...current,
-      [itemId]: nextValue,
-    }))
+  function getDraftQuantity(item) {
+    return draftQuantities[item.id] ?? item.quantity
   }
 
-  function handleUpdate(itemId) {
-    const item = items.find((entry) => entry.id === itemId)
-    const fallbackQuantity = item?.quantity ?? 1
-    const nextQuantity = Number.parseInt(draftQuantities[itemId] ?? String(fallbackQuantity), 10)
+  async function handleUpdate(item) {
+    const nextQuantity = Number(getDraftQuantity(item))
 
-    if (!Number.isInteger(nextQuantity) || nextQuantity < 1) {
-      setFeedback({ message: 'Quantity must be at least 1.', type: 'error' })
+    if (nextQuantity === item.quantity) {
+      setFeedback({
+        variant: 'error',
+        title: 'Quantity unchanged',
+        message: 'Choose a different quantity before updating.',
+      })
       return
     }
 
-    if (item && nextQuantity === item.quantity) {
-      setFeedback({ message: 'Quantity is unchanged.', type: 'success' })
-      return
-    }
+    setFeedback(null)
 
-    updateItemMutation.mutate({ id: itemId, quantity: nextQuantity })
+    await updateMutation.mutateAsync({ id: item.id, quantity: nextQuantity }, {
+      onSuccess: () => {
+        setFeedback({ variant: 'success', title: 'Cart updated', message: 'Item quantity updated successfully.' })
+      },
+      onError: () => {
+        setFeedback({ variant: 'error', title: 'Update failed', message: 'Unable to update item quantity right now.' })
+      },
+    })
+  }
+
+  async function handleRemove(itemId) {
+    setFeedback(null)
+
+    await removeMutation.mutateAsync(itemId, {
+      onSuccess: () => {
+        setFeedback({ variant: 'success', title: 'Item removed', message: 'Item removed from your cart.' })
+      },
+      onError: () => {
+        setFeedback({ variant: 'error', title: 'Remove failed', message: 'Unable to remove item right now.' })
+      },
+    })
   }
 
   return (
-    <section className="page page--customer" aria-labelledby="cart-title">
-      <p className="eyebrow">Cart</p>
-      <p className="step-label">Step 1 of 2</p>
-      <h1 id="cart-title">Your cart</h1>
+    <section className={styles.pageSection}>
+      <header className="pageHeader">
+        <h1 className="pageTitle">Your cart</h1>
+        <p className="pageSubtitle">Review quantity, update cart lines, and continue to checkout.</p>
+      </header>
 
-      {feedback.message ? (
-        <p
-          className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
-          role={feedback.type === 'error' ? 'alert' : 'status'}
-          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+      {feedback ? (
+        <AlertBox
+          variant={feedback.variant}
+          title={feedback.title}
+          message={feedback.message}
+          onClose={() => setFeedback(null)}
+        />
+      ) : null}
+
+      <div className={styles.layout}>
+        <StateBlock
+          isLoading={cartQuery.isLoading}
+          isError={cartQuery.isError}
+          error={cartQuery.error}
+          isEmpty={!items.length}
+          emptyTitle="Your cart is empty"
+          emptyMessage="Browse products and add your first item to continue checkout."
+          loadingText="Loading cart items..."
         >
-          {feedback.message}
-        </p>
-      ) : null}
+          <section className={styles.itemsPanel}>
+            {items.map((item) => (
+              <article key={item.id} className={styles.itemRow}>
+                <img src={item.product.imageUrl} alt={item.product.name} className={styles.image} />
+                <div className={styles.itemInfo}>
+                  <h3>{item.product.name}</h3>
+                  <p>{item.product.cpu} · {item.product.ramGb}GB · {item.product.storageGb}GB SSD</p>
+                  <p className={item.product.stockQty > 0 ? 'badge badgeSuccess' : 'badge badgeError'}>
+                    {item.product.stockQty > 0 ? 'In stock' : 'Out of stock'}
+                  </p>
+                </div>
 
-      {cartQuery.isLoading ? (
-        <p role="status" aria-live="polite">
-          Loading cart...
-        </p>
-      ) : null}
+                <div className={styles.controls}>
+                  <label className="field">
+                    <span className="fieldLabel">Quantity</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={Math.max(1, item.product.stockQty)}
+                      value={getDraftQuantity(item)}
+                      onChange={(event) => {
+                        const value = Number(event.target.value)
+                        setDraftQuantities((previous) => ({ ...previous, [item.id]: value }))
+                      }}
+                    />
+                  </label>
+                  <div className="inlineActions">
+                    <button type="button" className="secondaryButton" onClick={() => handleUpdate(item)}>
+                      Update
+                    </button>
+                    <button type="button" className="ghostDangerButton" onClick={() => handleRemove(item.id)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
 
-      {cartQuery.isError ? (
-        <p className="catalog-feedback catalog-feedback--error">
-          {formatApiError(cartQuery.error, 'Unable to load your cart right now.')}
-        </p>
-      ) : null}
+                <p className={styles.price}>{formatMoney(item.product.price * item.quantity)}</p>
+              </article>
+            ))}
+          </section>
+        </StateBlock>
 
-      {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
-        <div className="catalog-feedback">
-          <p>Your cart is empty.</p>
-          <div className="cta-row">
-            <Link className="button button--secondary" to="/products">
-              Browse products
-            </Link>
+        <aside className={`${styles.summaryPanel} panel`}>
+          <h2>Order summary</h2>
+          <dl>
+            <div>
+              <dt>Subtotal</dt>
+              <dd>{formatMoney(subtotal)}</dd>
+            </div>
+            <div>
+              <dt>Shipping</dt>
+              <dd>Calculated at checkout</dd>
+            </div>
+            <div>
+              <dt>Estimated tax</dt>
+              <dd>Calculated at checkout</dd>
+            </div>
+          </dl>
+          <p className={styles.total}>Total {formatMoney(subtotal)}</p>
+
+          <div className={styles.summaryActions}>
+            {items.length > 0 ? (
+              <Link to="/checkout" className="primaryButton">
+                Continue to checkout
+              </Link>
+            ) : (
+              <button type="button" className="primaryButton" disabled>
+                Continue to checkout
+              </button>
+            )}
+            <Link to="/shop" className="secondaryButton">Browse products</Link>
           </div>
-        </div>
-      ) : null}
-
-      {items.length > 0 ? (
-        <div className="cart-list">
-          {items.map((item) => (
-            <article key={item.id} className="cart-item">
-              <img
-                src={item.product.imageUrl}
-                alt={item.product.name}
-                className="cart-item__image"
-                width="180"
-                height="135"
-              />
-
-              <div className="cart-item__content">
-                <div>
-                  <h2>{item.product.name}</h2>
-                  <p className="product-specs">{item.product.brand}</p>
-                  <p>{currencyFormatter.format(item.product.price)}</p>
-                </div>
-
-                <div className="cart-item__actions">
-                  <label htmlFor={`quantity-${item.id}`}>Quantity</label>
-                  <input
-                    id={`quantity-${item.id}`}
-                    type="number"
-                    min="1"
-                    max={item.product.stockQty}
-                    value={draftQuantities[item.id] ?? String(item.quantity)}
-                    onChange={(event) => handleQuantityChange(item.id, event.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="button button--secondary"
-                    onClick={() => handleUpdate(item.id)}
-                    disabled={updateItemMutation.isPending || removeItemMutation.isPending}
-                  >
-                    Update
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--secondary"
-                    onClick={() => removeItemMutation.mutate(item.id)}
-                    disabled={removeItemMutation.isPending || updateItemMutation.isPending}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
-      {items.length > 0 ? (
-        <div className="checkout-summary">
-          <p>Subtotal</p>
-          <strong>{currencyFormatter.format(subtotal)}</strong>
-          <Link className="button button--primary" to="/checkout">
-            Continue to checkout
-          </Link>
-        </div>
-      ) : null}
+        </aside>
+      </div>
     </section>
   )
 }

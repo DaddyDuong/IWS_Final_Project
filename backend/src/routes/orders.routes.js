@@ -150,7 +150,21 @@ ordersRoutes.post('/checkout', validateBody(checkoutSchema), async (req, res, ne
         },
       });
 
-      if (cartItems.length === 0) {
+      const activeCartItems = cartItems.filter((item) => !item.product.isDeleted);
+      const deletedProductIds = cartItems
+        .filter((item) => item.product.isDeleted)
+        .map((item) => item.productId);
+
+      if (deletedProductIds.length > 0) {
+        await tx.cartItem.deleteMany({
+          where: {
+            userId: req.authUser.id,
+            productId: { in: deletedProductIds },
+          },
+        });
+      }
+
+      if (activeCartItems.length === 0) {
         throw { status: 409, code: 'ORDER_CART_EMPTY', message: 'Cart is empty' };
       }
 
@@ -166,13 +180,13 @@ ordersRoutes.post('/checkout', validateBody(checkoutSchema), async (req, res, ne
         throw { status: 404, code: 'ORDER_ADDRESS_NOT_FOUND', message: 'Address not found' };
       }
 
-      for (const item of cartItems) {
+      for (const item of activeCartItems) {
         if (item.product.isDeleted || item.product.stockQty < item.quantity) {
           throw { status: 409, code: 'ORDER_STOCK_UNAVAILABLE', message: 'One or more items are out of stock' };
         }
       }
 
-      const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+      const subtotal = activeCartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const shippingFee = 0;
       const total = subtotal + shippingFee;
 
@@ -185,7 +199,7 @@ ordersRoutes.post('/checkout', validateBody(checkoutSchema), async (req, res, ne
           total,
           items: {
             createMany: {
-              data: cartItems.map((item) => ({
+              data: activeCartItems.map((item) => ({
                 productId: item.productId,
                 unitPrice: item.product.price,
                 quantity: item.quantity,
@@ -197,7 +211,7 @@ ordersRoutes.post('/checkout', validateBody(checkoutSchema), async (req, res, ne
         select: { id: true },
       });
 
-      for (const item of cartItems) {
+      for (const item of activeCartItems) {
         const stockUpdate = await tx.product.updateMany({
           where: {
             id: item.productId,

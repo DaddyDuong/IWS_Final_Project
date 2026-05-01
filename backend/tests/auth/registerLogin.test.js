@@ -65,16 +65,23 @@ describe('auth endpoints', () => {
     );
   });
 
-  it('does not globally sanitize auth input fields', async () => {
+  it('sanitizes auth text fields on register', async () => {
     const res = await request(app).post('/api/v1/auth/register').send({
-      email: 'preserve@example.com',
+      email: '  preserve@example.com  ',
       password: 'strong-password',
       fullName: '  Alice <Admin>  ',
+      phone: '  <0900000000>  ',
     });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.user.fullName).toBe('  Alice <Admin>  ');
+    expect(res.body.data.user).toEqual(
+      expect.objectContaining({
+        email: 'preserve@example.com',
+        fullName: 'Alice Admin',
+        phone: '0900000000',
+      }),
+    );
   });
 
   it('logs in with valid credentials and returns jwt token', async () => {
@@ -98,6 +105,23 @@ describe('auth endpoints', () => {
         fullName: 'Bob Tran',
       }),
     );
+  });
+
+  it('trims email before login', async () => {
+    await request(app).post('/api/v1/auth/register').send({
+      email: 'login-trim@example.com',
+      password: 'strong-password',
+      fullName: 'Login Trim',
+    });
+
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: '  login-trim@example.com  ',
+      password: 'strong-password',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.email).toBe('login-trim@example.com');
   });
 
   it('rejects duplicate register with 409 EMAIL_EXISTS', async () => {
@@ -199,6 +223,32 @@ describe('auth endpoints', () => {
     expect(JSON.stringify(res.body)).not.toContain('sensitive details');
 
     prisma.user.findUnique = originalFindUnique;
+  });
+
+  it('trims auth email and reset token during password recovery', async () => {
+    process.env.ENABLE_DEMO_RESET_TOKEN = 'true';
+
+    await request(app).post('/api/v1/auth/register').send({
+      email: 'recovery@example.com',
+      password: 'old-password-123',
+      fullName: 'Recovery User',
+    });
+
+    const forgotRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: '  recovery@example.com  ',
+    });
+
+    expect(forgotRes.status).toBe(200);
+    expect(forgotRes.body.success).toBe(true);
+    expect(forgotRes.body.data.demoResetToken).toEqual(expect.any(String));
+
+    const resetRes = await request(app).post('/api/v1/auth/reset-password').send({
+      token: `  ${forgotRes.body.data.demoResetToken}  `,
+      newPassword: 'new-password-123',
+    });
+
+    expect(resetRes.status).toBe(200);
+    expect(resetRes.body.success).toBe(true);
   });
 
   afterAll(async () => {

@@ -59,6 +59,7 @@ describe('internal product CRUD routes', () => {
   });
 
   beforeEach(async () => {
+    await prisma.cartItem.deleteMany();
     await prisma.product.deleteMany();
     await prisma.user.deleteMany();
   });
@@ -285,6 +286,54 @@ describe('internal product CRUD routes', () => {
         isDeleted: true,
       }),
     );
+  });
+
+  it('removes cart items when a product is soft-deleted', async () => {
+    const managerToken = await buildAuthHeader('manager');
+    const customer = await prisma.user.create({
+      data: {
+        email: `customer-${Date.now()}@example.com`,
+        passwordHash: 'not-used-in-this-test',
+        fullName: 'Customer User',
+        role: 'customer',
+      },
+    });
+    const product = await prisma.product.create({
+      data: {
+        sku: `INT-CART-${Date.now()}`,
+        name: 'Cart Cleanup Laptop',
+        brand: 'CleanupBrand',
+        cpu: 'Intel Core i5',
+        ramGb: 8,
+        storageGb: 256,
+        screenSize: '14',
+        price: 15000000,
+        stockQty: 4,
+        description: 'Used to verify cart cleanup on soft delete',
+        imageUrl: 'https://example.com/int-cart-cleanup.jpg',
+      },
+    });
+
+    await prisma.cartItem.create({
+      data: {
+        userId: customer.id,
+        productId: product.id,
+        quantity: 2,
+      },
+    });
+
+    const deleteRes = await request(app)
+      .delete(`/api/v1/internal/products/${product.id}`)
+      .set('Authorization', managerToken);
+
+    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body.success).toBe(true);
+
+    const remainingCartItems = await prisma.cartItem.findMany({
+      where: { productId: product.id },
+    });
+
+    expect(remainingCartItems).toHaveLength(0);
   });
 
   it('sanitizes text fields on internal product writes', async () => {

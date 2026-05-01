@@ -1,30 +1,30 @@
 # Laptop Retail Website
 
-Full-stack laptop retail web app for the IWS final project. This repository is organized for team handoff, so each member can run the project quickly and locate the files they need to edit.
+Full-stack laptop retail web app for the IWS final project.
 
 ## What this project includes
 
-- Customer auth flow: register, login, forgot password, reset password
-- Product catalog with server-side filtering, sorting, and pagination
-- Cart flow: add, update quantity, remove item
-- Checkout flow that creates orders and clears cart in one transaction
-- Account features: profile, addresses CRUD, order history/detail/cancel
-- Reviews CRUD per product
-- Manager-only internal product CRUD API endpoints
+- Customer auth flow: sign in/register in one route, forgot password, reset password
+- Product catalog with filtering, sorting, pagination, and comparison
+- Product detail with add-to-cart and review CRUD
+- Cart and checkout flows
+- Account hub, addresses CRUD/default handling, orders list/detail/cancel
+- Manager-only internal product CRUD studio
 
 ## Repository structure
 
 ```text
 .
 ├── backend/
-│   ├── prisma/         # schema, migrations, seed data
-│   ├── src/            # app, routes, middlewares, libs
-│   ├── tests/          # backend integration tests
+│   ├── prisma/
+│   ├── src/
+│   ├── tests/
 │   └── README.md
-└── frontend/
-    ├── src/            # pages, components, client libs, stores
-    ├── public/
-    └── README.md
+├── frontend/            # active v2 redesign app
+│   ├── public/
+│   ├── src/
+│   ├── tests/
+│   └── README.md
 ```
 
 ## Prerequisites
@@ -32,7 +32,7 @@ Full-stack laptop retail web app for the IWS final project. This repository is o
 - Node.js 20+
 - npm 10+
 
-## Quick start (team handoff)
+## Quick start
 
 Run these commands from the repository root:
 
@@ -42,17 +42,12 @@ Run these commands from the repository root:
 2. Prepare local database:
    - `npm run prisma:migrate --prefix backend`
    - `npm run prisma:seed --prefix backend`
-3. Start backend (Terminal 1):
-   - `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+3. Start backend (Terminal 1, choose one):
+   - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+   - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
 4. Start frontend (Terminal 2):
    - `npm run dev --prefix frontend`
 5. Open `http://localhost:5173`
-
-## Teammate handoff map
-
-- If you work on backend features, start at `backend/src/app.js`, then follow `backend/src/routes/`.
-- If you work on frontend pages, start at `frontend/src/App.jsx`, then open `frontend/src/pages/`.
-- If you work on shared API contracts, check both `backend/src/routes/` and `frontend/src/lib/customerApi.js`.
 
 ## Default local URLs
 
@@ -60,27 +55,39 @@ Run these commands from the repository root:
 - Backend API base: `http://localhost:8080/api/v1`
 - Backend health: `http://localhost:8080/health`
 
-## Seeded account
-
-Manager account used for internal product CRUD API testing:
+## Seeded manager account
 
 - Email: `manager@laptop.local`
 - Password: `Manager@123`
 
-## Where to look first
-
-- Backend API runbook: `backend/README.md`
-- Frontend app runbook: `frontend/README.md`
-
 ## Common commands
 
 - Backend tests: `npm test --prefix backend`
-- Frontend tests: `npm run test:run --prefix frontend`
 - Frontend lint: `npm run lint --prefix frontend`
+- Frontend unit tests: `npm run test:run --prefix frontend`
 - Frontend build: `npm run build --prefix frontend`
+- Frontend E2E (flows + visual): `npm run e2e --prefix frontend`
+- Frontend visual snapshot update: `npm run e2e:update-snapshots --prefix frontend`
 
-## Troubleshooting
+## Recommended verification gate
 
-- If backend returns missing-table errors, run migrate + seed again.
-- If forgot-password does not return a demo token locally, set `ENABLE_DEMO_RESET_TOKEN=true` before starting backend.
-- If frontend cannot call backend, verify `VITE_API_BASE_URL` in `frontend` and CORS settings in `backend/src/config/env.js`.
+Run before handoff:
+
+1. `npm test --prefix backend`
+2. `npm run lint --prefix frontend`
+3. `npm run test:run --prefix frontend`
+4. `npm run build --prefix frontend`
+5. `npm run e2e --prefix frontend`
+
+## Submission checklist (IWS)
+
+- Confirm backend and frontend source are included in final archive.
+- Include personal report from each group member with contribution evidence screenshots.
+- Package one zip file using the required naming convention from the course spec.
+- Re-check exact filename punctuation and spacing before upload.
+
+## Notes
+
+- Active frontend route contract is the consolidated v2 map documented in `frontend/README.md`.
+- Backend and frontend runbooks live in `backend/README.md` and `frontend/README.md`.
+- Frontend Playwright suite uses mock API fixtures by default; use a running backend for live integration checks.

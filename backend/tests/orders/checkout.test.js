@@ -240,6 +240,41 @@ describe('orders checkout and cancel routes', () => {
     expect(orderCount).toBe(0);
   });
 
+  it('ignores soft-deleted cart items during checkout', async () => {
+    const { user, authHeader } = await createUserWithToken('checkout-soft-deleted');
+    const address = await createAddressForUser(user.id, 'checkout-soft-deleted');
+    const activeProduct = await createProduct('checkout-active', { price: 8000000, stockQty: 5 });
+    const deletedProduct = await createProduct('checkout-deleted', { price: 5000000, stockQty: 5 });
+
+    await prisma.cartItem.createMany({
+      data: [
+        { userId: user.id, productId: activeProduct.id, quantity: 1 },
+        { userId: user.id, productId: deletedProduct.id, quantity: 1 },
+      ],
+    });
+
+    await prisma.product.update({
+      where: { id: deletedProduct.id },
+      data: { isDeleted: true },
+    });
+
+    const res = await request(app)
+      .post('/api/v1/orders/checkout')
+      .set('Authorization', authHeader)
+      .send({ addressId: address.id });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.items).toHaveLength(1);
+    expect(res.body.data.items[0].productId).toBe(activeProduct.id);
+
+    const remainingCartItems = await prisma.cartItem.findMany({
+      where: { userId: user.id },
+    });
+
+    expect(remainingCartItems).toHaveLength(0);
+  });
+
   it('lists and retrieves only current user orders', async () => {
     const { user: owner, authHeader: ownerToken } = await createUserWithToken('orders-owner');
     const { user: otherUser } = await createUserWithToken('orders-other');

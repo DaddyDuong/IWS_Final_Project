@@ -24,9 +24,22 @@ yarn-error.log*
 .vscode/
 
 # Local tooling artifacts
+.codex/
+.codex
 .playwright-mcp/
+frontend/playwright-report/
+frontend/test-results/
+frontend/blob-report/
+frontend/.vite/
+frontend-archive/
 docs/
 opencode.json
+
+# Frontend local noise
+*.local
+pnpm-debug.log*
+lerna-debug.log*
+logs/
 
 # Local reference docs (not part of app source)
 DESIGN.md

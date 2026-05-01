@@ -7,11 +7,11 @@ Express + Prisma REST API for the Laptop Retail Website.
 - Node.js + Express 5
 - Prisma ORM + SQLite (`better-sqlite3` adapter)
 - JWT authentication + role-based authorization
-- Zod request validation + input sanitization
+- Zod request validation + input sanitization for request bodies and auth fields
 - Helmet, CORS allowlist, and rate limiting
 - Vitest + Supertest integration tests
 
-## Published backend structure
+## Project layout
 
 ```text
 backend/
@@ -41,8 +41,9 @@ backend/
    - `npm run prisma:migrate`
 4. Seed database:
    - `npm run prisma:seed`
-5. Start API server:
-   - `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev`
+5. Start API server (choose one):
+   - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev`
+   - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev`
 
 Default base URL: `http://localhost:8080`
 
@@ -80,9 +81,9 @@ Default base URL: `http://localhost:8080`
   - `DELETE /cart/items/:id`
   - `GET /addresses`
   - `POST /addresses`
-  - `PATCH /addresses/:id`
-  - `DELETE /addresses/:id`
-  - `POST /orders/checkout`
+  - `PATCH /addresses/:id` (returns `409 ADDRESS_IN_USE` once the address has been used by an order)
+  - `DELETE /addresses/:id` (returns `409 ADDRESS_IN_USE` once the address has been used by an order)
+  - `POST /orders/checkout` (skips stale cart items for soft-deleted products)
   - `GET /orders`
   - `GET /orders/:id`
   - `PATCH /orders/:id/cancel`
@@ -92,15 +93,31 @@ Default base URL: `http://localhost:8080`
 - Manager role only:
   - `POST /internal/products`
   - `PATCH /internal/products/:id`
-  - `DELETE /internal/products/:id` (soft delete)
+  - `DELETE /internal/products/:id` (soft delete + cart cleanup)
 
-## Product list query parameters
+## Collection query parameters
 
-`GET /api/v1/products` supports:
+All multi-record GET endpoints use server-side pagination via `page` + `limit`.
 
-- Pagination: `page`, `limit`
-- Sorting: `sortBy` (`createdAt`, `price`, `name`), `sortOrder` (`asc`, `desc`)
-- Search/filter: `q`, `brand`, `cpu`, `ram`, `storage`, `minPrice`, `maxPrice`, `inStock`
+- `GET /api/v1/products`
+  - Sorting: `sortBy` (`createdAt`, `price`, `name`), `sortOrder` (`asc`, `desc`)
+  - Search/filter: `q`, `brand`, `cpu`, `ram`, `storage`, `minPrice`, `maxPrice`, `inStock`
+- `GET /api/v1/products/:id/reviews`
+  - Sorting: `sortBy` (`createdAt`, `rating`), `sortOrder` (`asc`, `desc`)
+  - Filters: `rating`, `hasComment`
+- `GET /api/v1/orders`
+  - Sorting: `sortBy` (`placedAt`, `total`, `status`), `sortOrder` (`asc`, `desc`)
+  - Filters: `status`, `from`, `to`, `minTotal`, `maxTotal`
+- `GET /api/v1/cart`
+  - Sorting: `sortBy` (`createdAt`, `updatedAt`), `sortOrder` (`asc`, `desc`)
+- `GET /api/v1/addresses`
+  - Sorting: `sortBy` (`createdAt`, `updatedAt`, `receiver`), `sortOrder` (`asc`, `desc`)
+
+## Behavior notes
+
+- Auth requests trim and sanitize email, full name, phone, and reset-token inputs before validation.
+- Checkout ignores stale cart entries whose products were soft-deleted and removes them from the cart.
+- Address updates and deletes are blocked after an address has been used in an order, preserving order history.
 
 ## Response contract
 
@@ -123,6 +140,12 @@ Default base URL: `http://localhost:8080`
   - `npm test -- tests/products/listProducts.test.js`
   - `npm test -- tests/orders/checkout.test.js`
   - `npm test -- tests/security/rateLimit.test.js`
+
+## Verification gate
+
+Run before handoff:
+
+1. `npm test`
 
 ## Seeded data
 

@@ -47,6 +47,14 @@ const addressSelect = {
   updatedAt: true,
 };
 
+function buildAddressInUseError() {
+  return {
+    status: 409,
+    code: 'ADDRESS_IN_USE',
+    message: 'Address cannot be modified once it has been used in an order',
+  };
+}
+
 export const addressesRoutes = Router();
 
 addressesRoutes.use(requireAuth);
@@ -117,6 +125,15 @@ addressesRoutes.patch('/:id', sanitizeRequestTextFields, validateBody(updateAddr
     return next({ status: 404, message: 'Address not found' });
   }
 
+  const usedInOrder = await prisma.order.findFirst({
+    where: { addressId: req.params.id },
+    select: { id: true },
+  });
+
+  if (usedInOrder) {
+    return next(buildAddressInUseError());
+  }
+
   const address = await prisma.$transaction(async (tx) => {
     if (req.validatedBody.isDefault === true) {
       await tx.address.updateMany({
@@ -157,6 +174,15 @@ addressesRoutes.delete('/:id', async (req, res, next) => {
 
   if (!address) {
     return next({ status: 404, message: 'Address not found' });
+  }
+
+  const usedInOrder = await prisma.order.findFirst({
+    where: { addressId: req.params.id },
+    select: { id: true },
+  });
+
+  if (usedInOrder) {
+    return next(buildAddressInUseError());
   }
 
   await prisma.address.delete({

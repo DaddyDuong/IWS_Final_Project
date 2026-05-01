@@ -11,24 +11,32 @@ import {
 } from '../lib/passwordResetToken.js';
 import { validateBody } from '../middlewares/validate.js';
 
+function sanitizeAuthText(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  return value.replace(/[<>]/g, '').trim();
+}
+
 const registerSchema = z.object({
-  email: z.string().email(),
+  email: z.preprocess(sanitizeAuthText, z.string().email()),
   password: z.string().min(8),
-  fullName: z.string().min(1),
-  phone: z.string().min(1).optional(),
+  fullName: z.preprocess(sanitizeAuthText, z.string().min(1)),
+  phone: z.preprocess(sanitizeAuthText, z.string().min(1).optional()),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.preprocess(sanitizeAuthText, z.string().email()),
   password: z.string().min(1),
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email(),
+  email: z.preprocess(sanitizeAuthText, z.string().email()),
 });
 
 const resetPasswordSchema = z.object({
-  token: z.string().min(1),
+  token: z.preprocess((value) => (typeof value === 'string' ? value.trim() : value), z.string().min(1)),
   newPassword: z.string().min(8),
 });
 

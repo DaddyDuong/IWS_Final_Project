@@ -89,8 +89,8 @@ describe('GET /api/v1/products', () => {
         },
         {
           sku: 'LAP-004',
-          name: 'ASUS ROG Zephyrus G14',
-          brand: 'ASUS',
+          name: 'Razer Blade 14',
+          brand: 'Razer',
           cpu: 'AMD Ryzen 9',
           ramGb: 32,
           storageGb: 1024,
@@ -157,7 +157,7 @@ describe('GET /api/v1/products', () => {
   it('supports q, hardware and stock filters while excluding soft-deleted products', async () => {
     const res = await request(app).get('/api/v1/products').query({
       q: 'gaming',
-      brand: 'ASUS',
+      brand: 'Razer',
       cpu: 'Ryzen 9',
       ram: '32',
       storage: '1024',
@@ -174,7 +174,7 @@ describe('GET /api/v1/products', () => {
     expect(res.body.data[0]).toEqual(
       expect.objectContaining({
         sku: 'LAP-004',
-        name: 'ASUS ROG Zephyrus G14',
+        name: 'Razer Blade 14',
       }),
     );
     expect(res.body.meta.total).toBe(1);

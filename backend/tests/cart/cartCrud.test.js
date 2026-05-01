@@ -150,6 +150,12 @@ describe('cart CRUD routes', () => {
           id: addedItemId,
           productId: product.id,
           quantity: 5,
+          product: expect.objectContaining({
+            id: product.id,
+            cpu: product.cpu,
+            ramGb: product.ramGb,
+            storageGb: product.storageGb,
+          }),
         }),
       ]),
     );

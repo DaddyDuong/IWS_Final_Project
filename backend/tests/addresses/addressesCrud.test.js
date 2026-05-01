@@ -71,6 +71,7 @@ describe('addresses CRUD routes', () => {
   });
 
   beforeEach(async () => {
+    await prisma.order.deleteMany();
     await prisma.address.deleteMany();
     await prisma.user.deleteMany();
   });
@@ -146,6 +147,52 @@ describe('addresses CRUD routes', () => {
 
     const remainingAddresses = await prisma.address.findMany();
     expect(remainingAddresses).toHaveLength(0);
+  });
+
+  it('blocks updates and deletes for addresses used by orders', async () => {
+    const { user, authHeader } = await createUserWithToken('address-in-use');
+
+    const address = await prisma.address.create({
+      data: {
+        userId: user.id,
+        ...buildAddressPayload('in-use'),
+      },
+    });
+
+    await prisma.order.create({
+      data: {
+        userId: user.id,
+        addressId: address.id,
+        subtotal: 1000000,
+        shippingFee: 0,
+        total: 1000000,
+      },
+    });
+
+    const updateRes = await request(app)
+      .patch(`/api/v1/addresses/${address.id}`)
+      .set('Authorization', authHeader)
+      .send({ city: 'Da Nang' });
+
+    expect(updateRes.status).toBe(409);
+    expect(updateRes.body.success).toBe(false);
+    expect(updateRes.body.error.code).toBe('ADDRESS_IN_USE');
+
+    const deleteRes = await request(app)
+      .delete(`/api/v1/addresses/${address.id}`)
+      .set('Authorization', authHeader);
+
+    expect(deleteRes.status).toBe(409);
+    expect(deleteRes.body.success).toBe(false);
+    expect(deleteRes.body.error.code).toBe('ADDRESS_IN_USE');
+
+    const existingAddress = await prisma.address.findUnique({ where: { id: address.id } });
+    expect(existingAddress).toEqual(
+      expect.objectContaining({
+        id: address.id,
+        city: 'Ho Chi Minh City',
+      }),
+    );
   });
 
   it('supports pagination and sorting for GET /addresses', async () => {

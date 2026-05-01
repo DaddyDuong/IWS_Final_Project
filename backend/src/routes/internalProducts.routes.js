@@ -132,20 +132,26 @@ internalProductsRoutes.patch('/:id', sanitizeRequestTextFields, validateBody(upd
 });
 
 internalProductsRoutes.delete('/:id', async (req, res, next) => {
-  const softDeleteResult = await prisma.product.updateMany({
-    where: {
-      id: req.params.id,
-      isDeleted: false,
-    },
-    data: { isDeleted: true },
-  });
+  const product = await prisma.$transaction(async (tx) => {
+    const softDeleteResult = await tx.product.updateMany({
+      where: {
+        id: req.params.id,
+        isDeleted: false,
+      },
+      data: { isDeleted: true },
+    });
 
-  if (softDeleteResult.count === 0) {
-    return next({ status: 404, message: 'Product not found' });
-  }
+    if (softDeleteResult.count === 0) {
+      return null;
+    }
 
-  const product = await prisma.product.findUnique({
-    where: { id: req.params.id },
+    await tx.cartItem.deleteMany({
+      where: { productId: req.params.id },
+    });
+
+    return tx.product.findUnique({
+      where: { id: req.params.id },
+    });
   });
 
   if (!product) {
