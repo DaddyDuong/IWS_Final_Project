@@ -1,4 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useAuthStore } from '../stores/authStore'
+import { fetchProfile } from '../lib/customerApi'
 
 const primaryLinks = [
   { to: '/', label: 'Home' },
@@ -8,6 +11,28 @@ const primaryLinks = [
 ]
 
 export function AppLayout() {
+  const navigate = useNavigate()
+  const token = useAuthStore(state => state.token)
+  const clearAuth = useAuthStore(state => state.clearAuth)
+  const [username, setUsername] = useState(null)
+
+  useEffect(() => {
+    if (token) {
+      fetchProfile()
+        .then(profile => {
+          setUsername(profile?.fullName || null)
+        })
+        .catch(err => console.error('Failed to fetch profile:', err))
+    } else {
+      setUsername(null)
+    }
+  }, [token])
+
+  const handleSignOut = () => {
+    clearAuth()
+    navigate('/login')
+  }
+
   return (
     <div className="app-shell">
       <header className="app-nav-wrap">
@@ -20,7 +45,9 @@ export function AppLayout() {
             </p>
             <ul className="nav-links nav-links--account">
               <li className="utility-menu">
-                <span className="nav-link nav-link--utility nav-link--menu">Sign in</span>
+                <span className="nav-link nav-link--utility nav-link--menu">
+                  {username ? username : 'Sign in'}
+                </span>
                 <div className="utility-menu__dropdown" role="menu" aria-label="Sign in options">
                   <div className="utility-signin-panel">
                     <h3>Welcome to IWS KHOA</h3>
@@ -30,22 +57,44 @@ export function AppLayout() {
                       <li>View orders & track products infor</li>
                       <li>Create & access a list of products</li>
                     </ul>
-                    <NavLink
-                      to="/login"
-                      className={({ isActive }) =>
-                        `utility-signin-panel__action utility-signin-panel__action--primary ${isActive ? 'is-active' : ''}`
-                      }
-                    >
-                      Sign In
-                    </NavLink>
-                    <NavLink
-                      to="/register"
-                      className={({ isActive }) =>
-                        `utility-signin-panel__action utility-signin-panel__action--secondary ${isActive ? 'is-active' : ''}`
-                      }
-                    >
-                      Create an Account
-                    </NavLink>
+                    {username ? (
+                      <>
+                        <NavLink
+                          to="/profile"
+                          className={({ isActive }) =>
+                            `utility-signin-panel__action utility-signin-panel__action--primary ${isActive ? 'is-active' : ''}`
+                          }
+                        >
+                          Account
+                        </NavLink>
+                        <button
+                          onClick={handleSignOut}
+                          className="utility-signin-panel__action utility-signin-panel__action--secondary utility-signout-button"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Sign Out
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <NavLink
+                          to="/login"
+                          className={({ isActive }) =>
+                            `utility-signin-panel__action utility-signin-panel__action--primary ${isActive ? 'is-active' : ''}`
+                          }
+                        >
+                          Sign In
+                        </NavLink>
+                        <NavLink
+                          to="/register"
+                          className={({ isActive }) =>
+                            `utility-signin-panel__action utility-signin-panel__action--secondary ${isActive ? 'is-active' : ''}`
+                          }
+                        >
+                          Create an Account
+                        </NavLink>
+                      </>
+                    )}
                   </div>
                 </div>
               </li>

@@ -263,6 +263,22 @@ a {
   filter: brightness(0.9);
 }
 
+/* Sign Out button styling */
+.utility-signout-button {
+  border: 1px solid #d32f2f;
+  color: #d32f2f;
+  background: transparent;
+  font-weight: 300;
+}
+
+.utility-signout-button:hover,
+.utility-signout-button:focus {
+  background: #d32f2f;
+  color: #ffffff;
+  border-color: #d32f2f;
+  outline: none;
+}
+
 .utility-menu__item {
   display: block;
   text-decoration: none;
