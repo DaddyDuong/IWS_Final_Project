@@ -90,6 +90,19 @@ function toPublicProduct(product) {
     imageUrl: product.imageUrl,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    // Extended spec fields
+    graphic: product.graphic,
+    screen: product.screen,
+    battery: product.battery,
+    weight: product.weight,
+    dimensions: product.dimensions,
+    os: product.os,
+    port: product.port,
+    connectivity: product.connectivity,
+    keyboard: product.keyboard,
+    condition: product.condition,
+    ram: product.ram,
+    storage: product.storage,
   };
 }
 

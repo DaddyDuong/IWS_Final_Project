@@ -34,11 +34,24 @@ const sampleProducts = mockProducts.map(p => ({
   cpu: p.cpu || 'Unknown CPU',
   ramGb: p.ramGb || 16,
   storageGb: p.storageGb || 512,
-  screenSize: p.screen || '15.6"',
+  screenSize: p.screen || p.screenSize || '15.6"',
   price: p.price,
   stockQty: Math.floor(Math.random() * 20) + 5,
   description: p.description || `${p.brand} ${p.name} - A great laptop for all your needs.`,
   imageUrl: p.imageUrl || `https://placehold.co/400x300/e2e8f0/1e293b?text=${encodeURIComponent(p.name)}`,
+  // Extended spec fields
+  graphic: p.graphic || null,
+  screen: p.screen || null,
+  battery: p.battery || null,
+  weight: p.weight || null,
+  dimensions: p.dimensions || null,
+  os: p.os || null,
+  port: p.port || null,
+  connectivity: p.connectivity || null,
+  keyboard: p.keyboard || null,
+  condition: p.condition || null,
+  ram: p.ram || null,
+  storage: p.storage || null,
 }));
 
 async function clearDatabase(tx) {
