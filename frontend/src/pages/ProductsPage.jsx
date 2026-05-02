@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { ProductComparison } from '../components/ProductComparison'
 import { ProductFilters } from '../components/ProductFilters'
 import { ProductGrid } from '../components/ProductGrid'
 import { apiClient } from '../lib/apiClient'
@@ -29,9 +28,11 @@ export function ProductsPage() {
     }
   }, [query, searchParams, setSearchParams])
 
+  const fetchQuery = useMemo(() => ({ ...query, limit: 100 }), [query])
+
   const productsQuery = useQuery({
-    queryKey: ['products', query],
-    queryFn: () => fetchProducts(query),
+    queryKey: ['products', fetchQuery],
+    queryFn: () => fetchProducts(fetchQuery),
     placeholderData: (previousData) => previousData,
   })
 
@@ -61,15 +62,11 @@ export function ProductsPage() {
       <ProductFilters query={query} onQueryChange={updateQuery} />
       <ProductGrid
         products={products}
-        meta={meta}
         isLoading={productsQuery.isLoading}
         isError={productsQuery.isError}
         error={productsQuery.error}
         isFetching={productsQuery.isFetching}
-        onPageChange={(nextPage) => updateQuery({ page: nextPage })}
       />
-
-      <ProductComparison products={products} />
     </section>
   )
 }

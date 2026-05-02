@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { currencyFormatter } from '../lib/formatters'
 import { ProductImage } from './ProductImage'
@@ -37,9 +38,61 @@ export function ProductCard({ product }) {
     </li>
   )
 }
+const TARGET_BRANDS = [
+  { id: 'Dell', name: 'Laptop Dell' },
+  { id: 'Asus', name: 'Laptop Asus' },
+  { id: 'HP', name: 'Laptop HP' },
+  { id: 'MSI', name: 'Laptop MSI' },
+  { id: 'Acer', name: 'Laptop Acer' },
+  { id: 'Gigabyte', name: 'Laptop Gigabyte' },
+  { id: 'Lenovo', name: 'Laptop Lenovo' }
+]
 
-export function ProductGrid({ products, meta, isLoading, isError, error, isFetching, onPageChange }) {
-  if (isLoading) {
+function BrandSection({ brandName, products }) {
+  const [displayCount, setDisplayCount] = useState(10)
+
+  if (!products || products.length === 0) return null
+
+  const visibleProducts = products.slice(0, displayCount)
+  const hasMore = displayCount < products.length
+
+  return (
+    <section className="brand-section" style={{ marginBottom: '60px', width: '100%' }}>
+      <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '24px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px', color: '#1a202c' }}>
+        {brandName}
+      </h2>
+      <ul className="brand-products-grid" aria-label={`Products from ${brandName}`}>
+        {visibleProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </ul>
+      {hasMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => setDisplayCount(prev => prev + 5)}
+            style={{ padding: '12px 32px', fontSize: '16px' }}
+          >
+            Show more
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
+
+export function ProductGrid({ products, isLoading, isError, error, isFetching }) {
+  const groupedProducts = useMemo(() => {
+    return products.reduce((acc, product) => {
+      const brand = product.brand || 'Other'
+      if (!acc[brand]) acc[brand] = []
+      acc[brand].push(product)
+      return acc
+    }, {})
+  }, [products])
+
+  if (isLoading && products.length === 0) {
     return <p className="catalog-feedback">Loading products…</p>
   }
 
@@ -55,41 +108,16 @@ export function ProductGrid({ products, meta, isLoading, isError, error, isFetch
     )
   }
 
-  const hasPrevious = meta?.page > 1
-  const hasNext = meta?.page < meta?.totalPages
-
   return (
-    <>
-      <ul className="products-grid" aria-label="Product catalog">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </ul>
-
-      {meta && (
-        <div className="pagination-bar" aria-live="polite">
-          <button
-            type="button"
-            className="button button--secondary"
-            disabled={!hasPrevious || isFetching}
-            onClick={() => onPageChange(meta.page - 1)}
-          >
-            Previous
-          </button>
-          <p>
-            Page {meta.page} of {Math.max(meta.totalPages, 1)} ({meta.total} results)
-            {isFetching ? ' - Updating…' : ''}
-          </p>
-          <button
-            type="button"
-            className="button button--secondary"
-            disabled={!hasNext || isFetching}
-            onClick={() => onPageChange(meta.page + 1)}
-          >
-            Next
-          </button>
-        </div>
-      )}
-    </>
+    <div className="product-grid-container" style={{ width: '100%' }}>
+      {TARGET_BRANDS.map(brandDef => (
+        <BrandSection
+          key={brandDef.id}
+          brandName={brandDef.name}
+          products={groupedProducts[brandDef.id] || []}
+        />
+      ))}
+      {isFetching && <p className="catalog-feedback" style={{ textAlign: 'center', marginTop: '20px' }}>Updating…</p>}
+    </div>
   )
 }
