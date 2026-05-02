@@ -9,7 +9,7 @@
     "test": "vitest run",
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "prisma:migrate": "prisma migrate dev --config prisma.config.ts",
-    "prisma:seed": "prisma db seed --config prisma.config.ts"
+    "prisma:seed": "prisma migrate deploy --config prisma.config.ts && prisma db seed --config prisma.config.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

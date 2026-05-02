@@ -76,7 +76,7 @@ frontend/
 - E2E tests (`npm run e2e`) use the in-repo mock API fixture at `tests/e2e/fixtures/mockApi.js`.
 - Visual coverage includes responsive snapshots for the main flows, including the empty-cart checkout-disabled state.
 - Because E2E runs on mocked API responses, backend does not need to be running for Playwright suites.
-- For real API integration checks, run backend + frontend dev servers and test flows manually in browser.
+- For real API integration checks, run backend + frontend dev servers after initializing the backend database with `npm run prisma:seed --prefix backend`.
 
 ## Verification gate
 

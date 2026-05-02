@@ -37,14 +37,13 @@ Full-stack laptop retail web app for the IWS final project.
 Run these commands from the repository root:
 
 1. Install dependencies:
-   - `npm install --prefix backend`
-   - `npm install --prefix frontend`
+    - `npm install --prefix backend`
+    - `npm install --prefix frontend`
 2. Prepare local database:
-   - `npm run prisma:migrate --prefix backend`
-   - `npm run prisma:seed --prefix backend`
+    - `npm run prisma:seed --prefix backend`
 3. Start backend (Terminal 1, choose one):
-   - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
-   - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+    - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+    - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
 4. Start frontend (Terminal 2):
    - `npm run dev --prefix frontend`
 5. Open `http://localhost:5173`
