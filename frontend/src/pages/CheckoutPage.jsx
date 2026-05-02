@@ -1,24 +1,39 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { currencyFormatter } from '../lib/formatters'
-import { mockAddresses, mockCartItems, mockProducts } from '../lib/mockData'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate } from 'react-router-dom'
+import { currencyFormatter, formatApiError } from '../lib/formatters'
+import { checkoutWithAddress, fetchAddresses, fetchCart } from '../lib/customerApi'
 
 export function CheckoutPage() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [selectedAddressId, setSelectedAddressId] = useState('')
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState({ message: '', type: 'success' })
 
-  const addresses = mockAddresses
-  const items = useMemo(
-    () =>
-      mockCartItems
-        .map((item) => {
-          const product = mockProducts.find((entry) => entry.id === item.productId)
-          return product ? { ...item, product } : null
-        })
-        .filter(Boolean),
-    []
+  const cartQuery = useQuery({
+    queryKey: ['cart'],
+    queryFn: fetchCart,
+  })
+
+  const addressesQuery = useQuery({
+    queryKey: ['addresses'],
+    queryFn: fetchAddresses,
+  })
+
+  const items = cartQuery.data || []
+  const addresses = addressesQuery.data || []
+
+  const defaultAddressId = useMemo(
+    () => addresses.find((address) => address.isDefault)?.id || addresses[0]?.id || '',
+    [addresses],
   )
-  const defaultAddressId = addresses.find((address) => address.isDefault)?.id || addresses[0]?.id || ''
+
+  useEffect(() => {
+    if (!selectedAddressId && defaultAddressId) {
+      setSelectedAddressId(defaultAddressId)
+    }
+  }, [defaultAddressId, selectedAddressId])
+
   const effectiveSelectedAddressId =
     addresses.some((address) => address.id === selectedAddressId) ? selectedAddressId : defaultAddressId
 
@@ -27,18 +42,33 @@ export function CheckoutPage() {
   const shippingFee = 0
   const grandTotal = subtotal + shippingFee
 
+  const checkoutMutation = useMutation({
+    mutationFn: checkoutWithAddress,
+    onSuccess: async (order) => {
+      setFeedback({ message: 'Order placed successfully.', type: 'success' })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['cart'] }),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+      ])
+      navigate(`/profile/orders/${order.id}`)
+    },
+    onError: (error) => {
+      setFeedback({
+        message: formatApiError(error, 'Unable to place this order right now.'),
+        type: 'error',
+      })
+    },
+  })
+
   function handleSubmit(event) {
     event.preventDefault()
 
     if (!effectiveSelectedAddressId) {
-      setFeedback('Please choose a shipping address.')
+      setFeedback({ message: 'Please choose a shipping address.', type: 'error' })
       return
     }
 
-    const address = addresses.find((entry) => entry.id === effectiveSelectedAddressId)
-    setFeedback(
-      `Mock order placed for ${address?.receiver ?? 'your selected address'}. This checkout is powered by mockData.js.`
-    )
+    checkoutMutation.mutate(effectiveSelectedAddressId)
   }
 
   return (
@@ -47,17 +77,31 @@ export function CheckoutPage() {
       <p className="step-label">Step 2 of 2</p>
       <h1 id="checkout-title">Checkout</h1>
 
-      {feedback ? (
-        <p className="catalog-feedback catalog-feedback--error" role="alert" aria-live="assertive">
-          {feedback}
+      {feedback.message ? (
+        <p
+          className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+        >
+          {feedback.message}
         </p>
       ) : null}
 
-      <p className="catalog-feedback catalog-feedback--success" role="status" aria-live="polite">
-        This checkout is powered by mock data from <strong>mockData.js</strong> so you can test the UI offline.
-      </p>
+      {cartQuery.isLoading || addressesQuery.isLoading ? <p>Loading checkout...</p> : null}
 
-      {items.length === 0 ? (
+      {cartQuery.isError ? (
+        <p className="catalog-feedback catalog-feedback--error">
+          {formatApiError(cartQuery.error, 'Unable to load cart right now.')}
+        </p>
+      ) : null}
+
+      {addressesQuery.isError ? (
+        <p className="catalog-feedback catalog-feedback--error">
+          {formatApiError(addressesQuery.error, 'Unable to load addresses right now.')}
+        </p>
+      ) : null}
+
+      {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
         <div className="catalog-feedback">
           <p>Your cart is empty. Add items before checkout.</p>
           <div className="cta-row">
@@ -68,19 +112,21 @@ export function CheckoutPage() {
         </div>
       ) : null}
 
-      {items.length > 0 ? (
+      {!cartQuery.isLoading && !cartQuery.isError && items.length > 0 ? (
         <form className="checkout-grid" onSubmit={handleSubmit}>
           <section className="checkout-card" aria-label="Shipping address">
             <h2>Shipping address</h2>
 
-            {addresses.length === 0 ? (
+            {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length === 0 ? (
               <div className="catalog-feedback">
                 <p>No saved addresses yet.</p>
                 <Link className="button button--secondary" to="/profile/addresses">
                   Add address
                 </Link>
               </div>
-            ) : (
+            ) : null}
+
+            {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length > 0 ? (
               <div className="address-options">
                 {addresses.map((address) => (
                   <label key={address.id} className="address-option">
@@ -101,7 +147,7 @@ export function CheckoutPage() {
                   </label>
                 ))}
               </div>
-            )}
+            ) : null}
           </section>
 
           <aside className="checkout-card checkout-card--summary" aria-label="Order summary">
@@ -143,9 +189,15 @@ export function CheckoutPage() {
             <button
               type="submit"
               className="button button--primary"
-              disabled={items.length === 0 || addresses.length === 0}
+              disabled={
+                items.length === 0 ||
+                addresses.length === 0 ||
+                checkoutMutation.isPending ||
+                cartQuery.isLoading ||
+                addressesQuery.isLoading
+              }
             >
-              Place order
+              {checkoutMutation.isPending ? 'Placing order...' : 'Place order'}
             </button>
           </aside>
         </form>

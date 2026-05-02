@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../App.jsx'
@@ -68,11 +68,12 @@ describe('App routing shell', () => {
 
   it('renders redesigned home route content with app navigation', () => {
     renderApp(['/'])
+    const primaryNav = screen.getByRole('navigation', { name: /primary navigation/i })
 
     expect(screen.getByRole('heading', { name: /find the laptop that fits your next move/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /^products$/i })).toBeInTheDocument()
+    expect(within(primaryNav).getByRole('link', { name: /^products$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /shop the catalog/i })).toBeInTheDocument()
-    expect(screen.getByText(/server-side filters/i)).toBeInTheDocument()
+    expect(screen.getByText(/browse focused devices/i)).toBeInTheDocument()
   })
 
   it('renders login page at /login', () => {

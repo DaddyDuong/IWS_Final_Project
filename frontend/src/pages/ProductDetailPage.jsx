@@ -7,7 +7,6 @@ import { ProductImage } from '../components/ProductImage'
 import { addCartItem } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
-import { mockProducts } from '../lib/mockData'
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -16,12 +15,8 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 })
 
 async function fetchProductById(productId) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const product = mockProducts.find((p) => p.id === productId)
-      resolve(product)
-    }, 500)
-  })
+  const response = await apiClient.get(`/products/${productId}`)
+  return response.data.data
 }
 
 export function ProductDetailPage() {
@@ -31,7 +26,6 @@ export function ProductDetailPage() {
   const { id } = useParams()
   const token = useAuthStore((state) => state.token)
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   const productQuery = useQuery({
     queryKey: ['product', id],
@@ -78,6 +72,20 @@ export function ProductDetailPage() {
   }
 
   if (productQuery.isError) {
+    const status = productQuery.error?.response?.status
+
+    if (status === 404) {
+      return (
+        <section className="page page--detail" aria-labelledby="product-detail-title">
+          <h1 id="product-detail-title">Product details</h1>
+          <p>Product not found.</p>
+          <Link className="inline-link" to="/products">
+            Back to catalog
+          </Link>
+        </section>
+      )
+    }
+
     return (
       <section className="page page--detail" aria-labelledby="product-detail-title">
         <h1 id="product-detail-title">Product details</h1>
@@ -107,19 +115,6 @@ export function ProductDetailPage() {
       <div className="product-hero-panel">
         <div className="product-gallery-container">
           <div className="product-gallery-section">
-            <div className="thumbnail-list">
-              {[0, 1, 2, 3, 4].map((index) => (
-                <button
-                  key={index}
-                  className={`thumbnail-btn ${activeImageIndex === index ? 'active' : ''}`}
-                  type="button"
-                  aria-label={`View image ${index + 1}`}
-                  onClick={() => setActiveImageIndex(index)}
-                >
-                  <img src={product.imageUrl} alt={`${product.name} thumbnail ${index + 1}`} />
-                </button>
-              ))}
-            </div>
             <div className="product-detail-media product-detail-media--hero">
               <ProductImage
                 src={product.imageUrl}

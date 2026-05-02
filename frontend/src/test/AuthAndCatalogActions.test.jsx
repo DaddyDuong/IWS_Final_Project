@@ -15,6 +15,11 @@ const { mockedApiGet, mockedApiPost, mockedAddCartItem } = vi.hoisted(() => ({
   mockedAddCartItem: vi.fn(),
 }))
 
+const { mockedFetchProductReviews, mockedFetchProfile } = vi.hoisted(() => ({
+  mockedFetchProductReviews: vi.fn(),
+  mockedFetchProfile: vi.fn(),
+}))
+
 vi.mock('../lib/apiClient', () => ({
   apiClient: {
     get: mockedApiGet,
@@ -27,6 +32,8 @@ vi.mock('../lib/customerApi', async () => {
   return {
     ...actual,
     addCartItem: mockedAddCartItem,
+    fetchProductReviews: mockedFetchProductReviews,
+    fetchProfile: mockedFetchProfile,
   }
 })
 
@@ -61,6 +68,8 @@ describe('auth and catalog actions', () => {
     mockedApiGet.mockReset()
     mockedApiPost.mockReset()
     mockedAddCartItem.mockReset()
+    mockedFetchProductReviews.mockReset()
+    mockedFetchProfile.mockReset()
   })
 
   it('logs in and redirects to intended page', async () => {
@@ -244,6 +253,8 @@ describe('auth and catalog actions', () => {
         },
       },
     })
+    mockedFetchProductReviews.mockResolvedValueOnce([])
+    mockedFetchProfile.mockResolvedValueOnce({ id: 'user-1' })
     mockedAddCartItem.mockResolvedValueOnce({ id: 'item-1' })
 
     renderWithProviders(

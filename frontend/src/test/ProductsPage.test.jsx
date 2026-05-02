@@ -92,7 +92,7 @@ describe('ProductsPage', () => {
     })
 
     expect(screen.getByRole('heading', { name: /products/i })).toBeInTheDocument()
-    expect(await screen.findAllByRole('link', { name: /view details/i })).toHaveLength(4)
+    expect(await screen.findAllByRole('link', { name: /view details/i })).toHaveLength(6)
     expect(await screen.findByRole('heading', { name: /compare visible laptops/i })).toBeInTheDocument()
   })
 

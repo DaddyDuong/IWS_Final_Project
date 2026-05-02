@@ -48,6 +48,16 @@ async function runSeed(dbPath, reset = false) {
   });
 }
 
+async function runResetScript(dbPath) {
+  await execFileAsync('npm', ['run', 'prisma:seed:reset'], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      DATABASE_URL: `file:${dbPath}`,
+    },
+  });
+}
+
 async function snapshotDemoDataset() {
   const [users, products, addresses, cartItems, orders, reviews] = await Promise.all([
     prisma.user.findMany({ orderBy: { email: 'asc' } }),
@@ -175,6 +185,30 @@ describe('demo seed', () => {
         expect.objectContaining({ userEmail: 'demo.customer@laptop.local' }),
       ]),
     );
+  });
+
+  it('can reset and seed a fresh database through the npm script', async () => {
+    const freshDir = await mkdtemp(join(tmpdir(), 'laptop-retail-demo-seed-fresh-'));
+    const freshDbPath = join(freshDir, 'fresh.db');
+
+    try {
+      await runResetScript(freshDbPath);
+
+      const freshAdapter = new PrismaBetterSqlite3({
+        url: `file:${freshDbPath}`,
+      });
+      const freshPrisma = new PrismaClient({ adapter: freshAdapter });
+
+      try {
+        expect(await freshPrisma.user.findUnique({ where: { email: 'demo.customer@laptop.local' } })).toBeTruthy();
+        expect(await freshPrisma.order.count()).toBeGreaterThan(0);
+        expect(await freshPrisma.review.count()).toBeGreaterThan(0);
+      } finally {
+        await freshPrisma.$disconnect();
+      }
+    } finally {
+      await rm(freshDir, { recursive: true, force: true });
+    }
   });
 
   afterAll(async () => {
