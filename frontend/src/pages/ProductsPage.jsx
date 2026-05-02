@@ -5,42 +5,17 @@ import { ProductComparison } from '../components/ProductComparison'
 import { ProductFilters } from '../components/ProductFilters'
 import { ProductGrid } from '../components/ProductGrid'
 import { apiClient } from '../lib/apiClient'
-import { mockProducts } from '../lib/mockData'
 import {
   buildProductQuery,
   buildSearchParamsFromProductQuery,
   updateSearchParamsWithQuery,
 } from '../lib/buildProductQuery'
-const USE_MOCK_DATA = true;
-async function fetchProducts(query) {
-  if (USE_MOCK_DATA) {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    let products = [...mockProducts];
-    if (query.brand) {
-      const brandLower = query.brand.toLowerCase();
-      products = products.filter(p => p.brand.toLowerCase() === brandLower);
-    }
-    if (query.q) {
-      const searchLower = query.q.toLowerCase();
-      products = products.filter(p => p.name.toLowerCase().includes(searchLower) || p.brand.toLowerCase().includes(searchLower));
-    }
-    const limit = query.limit || 16;
-    return {
-      data: products,
-      meta: {
-        page: query.page || 1,
-        limit: limit,
-        total: products.length,
-        totalPages: Math.ceil(products.length / limit)
-      }
-    };
-  }
 
+async function fetchProducts(query) {
   const response = await apiClient.get('/products', {
     params: query,
-  });
-  return response.data;
+  })
+  return response.data
 }
 
 function BrandSection({ brandName, brandProducts }) {
@@ -96,7 +71,20 @@ export function ProductsPage() {
     const nextParams = updateSearchParamsWithQuery(searchParams, patch)
     setSearchParams(nextParams, { replace: true })
   }
-  const isFiltered = query.brand != null || query.q != null || query.sort != null || query.useCase != null
+
+  const isFiltered =
+    query.brand != null
+    || query.q != null
+    || query.cpu != null
+    || query.ram != null
+    || query.storage != null
+    || query.minPrice != null
+    || query.maxPrice != null
+    || query.inStock != null
+    || query.page > 1
+    || query.sortBy !== 'createdAt'
+    || query.sortOrder !== 'desc'
+
   const groupedProducts = useMemo(() => {
     if (isFiltered) return {}
     return products.reduce((acc, product) => {
@@ -136,9 +124,9 @@ export function ProductsPage() {
             <p className="catalog-feedback">No products found.</p>
           )}
           {Object.entries(groupedProducts).map(([brandName, brandProducts]) => (
-            <BrandSection 
-              key={brandName} 
-              brandName={brandName} 
+            <BrandSection
+              key={brandName}
+              brandName={brandName}
               brandProducts={brandProducts} />
           ))}
         </>
@@ -147,4 +135,4 @@ export function ProductsPage() {
       <ProductComparison products={products} />
     </section>
   )
-} 
+}

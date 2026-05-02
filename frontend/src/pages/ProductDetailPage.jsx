@@ -7,7 +7,6 @@ import { ProductImage } from '../components/ProductImage'
 import { addCartItem } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
-import { mockProducts } from '../lib/mockData'
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -16,12 +15,8 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 })
 
 async function fetchProductById(productId) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const product = mockProducts.find((p) => p.id === productId)
-      resolve(product)
-    }, 500)
-  })
+  const response = await apiClient.get(`/products/${productId}`)
+  return response?.data?.data ?? null
 }
 
 export function ProductDetailPage() {

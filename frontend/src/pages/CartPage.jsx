@@ -1,21 +1,49 @@
 import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { mockCartItems, mockProducts } from '../lib/mockData'
+import { fetchCart, removeCartItem, updateCartItem } from '../lib/customerApi'
 import { currencyFormatter, formatApiError } from '../lib/formatters'
 
 export function CartPage() {
-  const [cartItems, setCartItems] = useState(() =>
-    mockCartItems
-      .map((item) => {
-        const product = mockProducts.find((entry) => entry.id === item.productId)
-        return product ? { ...item, product } : null
-      })
-      .filter(Boolean)
-  )
+  const queryClient = useQueryClient()
   const [draftQuantities, setDraftQuantities] = useState({})
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
 
-  const items = cartItems
+  const cartQuery = useQuery({
+    queryKey: ['cart'],
+    queryFn: fetchCart,
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: updateCartItem,
+    onSuccess: () => {
+      setDraftQuantities({})
+      setFeedback({ message: 'Cart item updated.', type: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+    },
+    onError: (error) => {
+      setFeedback({
+        message: formatApiError(error, 'Unable to update this cart item right now.'),
+        type: 'error',
+      })
+    },
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: removeCartItem,
+    onSuccess: () => {
+      setFeedback({ message: 'Item removed from cart.', type: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+    },
+    onError: (error) => {
+      setFeedback({
+        message: formatApiError(error, 'Unable to remove this item right now.'),
+        type: 'error',
+      })
+    },
+  })
+
+  const items = cartQuery.data || []
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
@@ -27,7 +55,7 @@ export function CartPage() {
   }
 
   function handleUpdate(itemId) {
-    const item = cartItems.find((entry) => entry.id === itemId)
+    const item = items.find((entry) => entry.id === itemId)
     const fallbackQuantity = item?.quantity ?? 1
     const nextQuantity = Number.parseInt(draftQuantities[itemId] ?? String(fallbackQuantity), 10)
 
@@ -41,28 +69,11 @@ export function CartPage() {
       return
     }
 
-    setCartItems((current) =>
-      current.map((entry) =>
-        entry.id === itemId
-          ? {
-              ...entry,
-              quantity: nextQuantity,
-            }
-          : entry
-      )
-    )
-    setDraftQuantities({})
-    setFeedback({ message: 'Cart item updated.', type: 'success' })
+    updateMutation.mutate({ id: itemId, quantity: nextQuantity })
   }
 
   function handleRemove(itemId) {
-    setCartItems((current) => current.filter((entry) => entry.id !== itemId))
-    setDraftQuantities((current) => {
-      const nextDraft = { ...current }
-      delete nextDraft[itemId]
-      return nextDraft
-    })
-    setFeedback({ message: 'Item removed from cart.', type: 'success' })
+    removeMutation.mutate(itemId)
   }
 
   return (
@@ -71,9 +82,13 @@ export function CartPage() {
       <p className="step-label">Step 1 of 2</p>
       <h1 id="cart-title">Your cart</h1>
 
-      <p className="catalog-feedback catalog-feedback--success" role="status" aria-live="polite">
-        This cart is powered by mock data from <strong>mockData.js</strong>, so you can edit quantities and remove items without the backend.
-      </p>
+      {cartQuery.isLoading ? <p className="catalog-feedback">Loading cart...</p> : null}
+
+      {cartQuery.isError ? (
+        <p className="catalog-feedback catalog-feedback--error">
+          {formatApiError(cartQuery.error, 'Unable to load your cart right now.')}
+        </p>
+      ) : null}
 
       {feedback.message ? (
         <p
@@ -123,11 +138,13 @@ export function CartPage() {
                     min="1"
                     max={999}
                     value={draftQuantities[item.id] ?? String(item.quantity)}
+                    disabled={updateMutation.isPending || removeMutation.isPending}
                     onChange={(event) => handleQuantityChange(item.id, event.target.value)}
                   />
                   <button
                     type="button"
                     className="button button--secondary"
+                    disabled={updateMutation.isPending || removeMutation.isPending}
                     onClick={() => handleUpdate(item.id)}
                   >
                     Update
@@ -135,6 +152,7 @@ export function CartPage() {
                   <button
                     type="button"
                     className="button button--secondary"
+                    disabled={updateMutation.isPending || removeMutation.isPending}
                     onClick={() => handleRemove(item.id)}
                   >
                     Remove

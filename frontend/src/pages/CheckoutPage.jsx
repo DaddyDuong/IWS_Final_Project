@@ -1,23 +1,43 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { checkoutWithAddress, fetchAddresses, fetchCart } from '../lib/customerApi'
 import { currencyFormatter } from '../lib/formatters'
-import { mockAddresses, mockCartItems, mockProducts } from '../lib/mockData'
+import { formatApiError } from '../lib/formatters'
 
 export function CheckoutPage() {
+  const queryClient = useQueryClient()
   const [selectedAddressId, setSelectedAddressId] = useState('')
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState({ message: '', type: 'success' })
 
-  const addresses = mockAddresses
-  const items = useMemo(
-    () =>
-      mockCartItems
-        .map((item) => {
-          const product = mockProducts.find((entry) => entry.id === item.productId)
-          return product ? { ...item, product } : null
-        })
-        .filter(Boolean),
-    []
-  )
+  const addressesQuery = useQuery({
+    queryKey: ['addresses'],
+    queryFn: fetchAddresses,
+  })
+
+  const cartQuery = useQuery({
+    queryKey: ['cart'],
+    queryFn: fetchCart,
+  })
+
+  const checkoutMutation = useMutation({
+    mutationFn: checkoutWithAddress,
+    onSuccess: () => {
+      setFeedback({ message: 'Order placed successfully.', type: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+    onError: (error) => {
+      setFeedback({
+        message: formatApiError(error, 'Unable to place order right now.'),
+        type: 'error',
+      })
+    },
+  })
+
+  const addresses = addressesQuery.data || []
+  const items = cartQuery.data || []
+
   const defaultAddressId = addresses.find((address) => address.isDefault)?.id || addresses[0]?.id || ''
   const effectiveSelectedAddressId =
     addresses.some((address) => address.id === selectedAddressId) ? selectedAddressId : defaultAddressId
@@ -31,14 +51,11 @@ export function CheckoutPage() {
     event.preventDefault()
 
     if (!effectiveSelectedAddressId) {
-      setFeedback('Please choose a shipping address.')
+      setFeedback({ message: 'Please choose a shipping address.', type: 'error' })
       return
     }
 
-    const address = addresses.find((entry) => entry.id === effectiveSelectedAddressId)
-    setFeedback(
-      `Mock order placed for ${address?.receiver ?? 'your selected address'}. This checkout is powered by mockData.js.`
-    )
+    checkoutMutation.mutate(effectiveSelectedAddressId)
   }
 
   return (
@@ -47,15 +64,25 @@ export function CheckoutPage() {
       <p className="step-label">Step 2 of 2</p>
       <h1 id="checkout-title">Checkout</h1>
 
-      {feedback ? (
+      {cartQuery.isLoading || addressesQuery.isLoading ? (
+        <p className="catalog-feedback">Loading checkout data...</p>
+      ) : null}
+
+      {cartQuery.isError || addressesQuery.isError ? (
         <p className="catalog-feedback catalog-feedback--error" role="alert" aria-live="assertive">
-          {feedback}
+          {formatApiError(cartQuery.error || addressesQuery.error, 'Unable to load checkout data right now.')}
         </p>
       ) : null}
 
-      <p className="catalog-feedback catalog-feedback--success" role="status" aria-live="polite">
-        This checkout is powered by mock data from <strong>mockData.js</strong> so you can test the UI offline.
-      </p>
+      {feedback.message ? (
+        <p
+          className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+        >
+          {feedback.message}
+        </p>
+      ) : null}
 
       {items.length === 0 ? (
         <div className="catalog-feedback">
@@ -89,6 +116,7 @@ export function CheckoutPage() {
                       name="addressId"
                       value={address.id}
                       checked={effectiveSelectedAddressId === address.id}
+                      disabled={checkoutMutation.isPending}
                       onChange={(event) => setSelectedAddressId(event.target.value)}
                     />
                     <span>
@@ -143,9 +171,9 @@ export function CheckoutPage() {
             <button
               type="submit"
               className="button button--primary"
-              disabled={items.length === 0 || addresses.length === 0}
+              disabled={items.length === 0 || addresses.length === 0 || checkoutMutation.isPending}
             >
-              Place order
+              {checkoutMutation.isPending ? 'Placing order...' : 'Place order'}
             </button>
           </aside>
         </form>
