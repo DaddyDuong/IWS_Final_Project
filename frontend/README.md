@@ -90,11 +90,31 @@ Commands:
 ## Scripts
 
 - `npm run dev`: start Vite dev server
-- `npm run build`: create production build
-- `npm run preview`: preview production build
-- `npm run lint`: run ESLint
-- `npm run test`: run tests in watch mode
-- `npm run test:run`: run tests once
+- `npm run build`: production build
+- `npm run preview`: preview build
+- `npm run lint`: ESLint
+- `npm run test`: Vitest watch
+- `npm run test:run`: Vitest one-shot
+- `npm run e2e`: Playwright flow + visual suites
+- `npm run e2e:visual`: Playwright visual suite only
+- `npm run e2e:update-snapshots`: refresh visual baselines
+
+## Test architecture
+
+- Unit tests (`npm run test:run`) validate query utilities and auth session behavior.
+- E2E tests (`npm run e2e`) use the in-repo mock API fixture at `tests/e2e/fixtures/mockApi.js`.
+- Visual coverage includes responsive snapshots for the main flows, including the empty-cart checkout-disabled state.
+- Because E2E runs on mocked API responses, backend does not need to be running for Playwright suites.
+- For real API integration checks, run backend + frontend dev servers after initializing the backend database with `npm run prisma:seed --prefix backend`.
+
+## Verification gate
+
+Run before handoff:
+
+1. `npm run lint`
+2. `npm run test:run`
+3. `npm run build`
+4. `npm run e2e`
 
 ## Troubleshooting
 

@@ -37,11 +37,9 @@ backend/
    - `npm install`
 2. Generate Prisma client:
    - `npm run prisma:generate`
-3. Apply migrations:
-   - `npm run prisma:migrate`
-4. Seed database:
+3. Seed database:
    - `npm run prisma:seed`
-5. Start API server (choose one):
+4. Start API server (choose one):
    - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev`
    - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev`
 
@@ -131,7 +129,7 @@ All multi-record GET endpoints use server-side pagination via `page` + `limit`.
 - `npm test`: run backend test suite
 - `npm run prisma:generate`: generate Prisma client
 - `npm run prisma:migrate`: run local migrations
-- `npm run prisma:seed`: seed local data
+- `npm run prisma:seed`: apply migrations and seed local data
 
 ## Testing
 
@@ -157,6 +155,6 @@ Run before handoff:
 ## Troubleshooting
 
 - `JWT_SECRET is required`: set `JWT_SECRET` or set `ALLOW_INSECURE_DEV_JWT=true`.
-- `table not found` or Prisma model errors: re-run `npm run prisma:migrate` and `npm run prisma:seed`.
+- `table not found` or Prisma model errors: re-run `npm run prisma:seed`.
 - CORS blocked in browser: confirm frontend origin is in `CORS_ALLOWED_ORIGINS`.
 - Forgot-password does not return demo token: set `ENABLE_DEMO_RESET_TOKEN=true`.

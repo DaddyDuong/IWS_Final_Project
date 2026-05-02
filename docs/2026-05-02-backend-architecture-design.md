@@ -135,6 +135,9 @@ Test files exist for health, auth, cart, orders, addresses, products, reviews, s
 - `backend/tests/health.test.js` verifies `GET /health` returns the expected success payload.
 - `backend/tests/auth/*`, `backend/tests/cart/*`, `backend/tests/orders/*`, `backend/tests/addresses/*`, `backend/tests/products/*`, `backend/tests/reviews/*`, `backend/tests/security/*`, and `backend/tests/db/*` document the repository's current route and helper coverage.
 
+## Local Setup
+For a fresh SQLite database, `npm run prisma:seed` applies pending migrations before running the seed script.
+
 ## Current Limitations
 - There is no dedicated service layer; business rules live directly in route handlers.
 - Validation and sanitization are implemented inconsistently across routes, so input handling is not fully uniform.
