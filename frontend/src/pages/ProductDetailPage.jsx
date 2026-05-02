@@ -1,14 +1,12 @@
 import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { apiClient } from '../lib/apiClient'
+import { ProductReviews } from '../components/ProductReviews'
+import { ProductImage } from '../components/ProductImage'
+import { addCartItem } from '../lib/customerApi'
+import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
-<<<<<<< HEAD
-import { useCartMutations, useProductQuery } from '../hooks/useDomainData'
-import { formatMoney } from '../utils/format'
-import { AlertBox } from '../components/shared/AlertBox'
-import { StateBlock } from '../components/shared/StateBlock'
-import { ReviewsPanel } from '../components/product/ReviewsPanel'
-import styles from './ProductDetailPage.module.css'
-=======
 import { mockProducts } from '../lib/mockData'
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
@@ -25,66 +23,75 @@ async function fetchProductById(productId) {
     }, 500)
   })
 }
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
 export function ProductDetailPage() {
-  const { productId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
+  const { id } = useParams()
   const token = useAuthStore((state) => state.token)
-<<<<<<< HEAD
-  const [quantity, setQuantity] = useState(1)
-  const [feedback, setFeedback] = useState(null)
-=======
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
-  const productQuery = useProductQuery(productId)
-  const { addMutation } = useCartMutations()
+  const productQuery = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => fetchProductById(id),
+    enabled: Boolean(id),
+  })
 
-  const product = productQuery.data
-  const safeProduct = product ?? {
-    id: '',
-    name: '',
-    brand: '',
-    price: 0,
-    stockQty: 0,
-    description: '',
-    imageUrl: '',
-    cpu: '',
-    ramGb: 0,
-    storageGb: 0,
-    screenSize: '',
-  }
+  const addToCartMutation = useMutation({
+    mutationFn: addCartItem,
+    onSuccess: () => {
+      setFeedback({ message: 'Added to your cart.', type: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+    },
+    onError: (error) => {
+      setFeedback({
+        message: formatApiError(error, 'Unable to add this item to your cart.'),
+        type: 'error',
+      })
+    },
+  })
 
-  async function handleAddToCart() {
-    if (!product) {
+  function handleAddToCart() {
+    const product = productQuery.data
+
+    if (!product || product.stockQty < 1) {
       return
     }
 
     if (!token) {
-      navigate('/auth', { replace: true, state: { from: location.pathname } })
+      navigate('/login', { replace: true, state: { from: location } })
       return
     }
 
-    setFeedback(null)
-
-    await addMutation.mutateAsync({ productId: product.id, quantity: Number(quantity) }, {
-      onSuccess: () => {
-        setFeedback({ variant: 'success', title: 'Added to cart', message: `${product.name} was added to your cart.` })
-      },
-      onError: () => {
-        setFeedback({ variant: 'error', title: 'Unable to add item', message: 'Please check stock or try again shortly.' })
-      },
-    })
+    addToCartMutation.mutate({ productId: product.id, quantity: 1 })
   }
 
+  if (productQuery.isLoading) {
+    return (
+      <section className="page page--detail" aria-labelledby="product-detail-title">
+        <h1 id="product-detail-title">Product details</h1>
+        <p>Loading product…</p>
+      </section>
+    )
+  }
+
+  if (productQuery.isError) {
+    return (
+      <section className="page page--detail" aria-labelledby="product-detail-title">
+        <h1 id="product-detail-title">Product details</h1>
+        <p>Unable to load this product right now.</p>
+        <Link className="inline-link" to="/products">
+          Back to catalog
+        </Link>
+      </section>
+    )
+  }
+
+  const product = productQuery.data
+
   return (
-<<<<<<< HEAD
-    <section className={styles.pageSection}>
-      <Link to="/shop" className={styles.backLink}>← Back to catalog</Link>
-=======
     <section className="product-detail-page" aria-labelledby="product-detail-title">
       <div className="top-navigation-bar">
         <Link to="/products" className="btn-back-catalog">
@@ -134,41 +141,16 @@ export function ProductDetailPage() {
             <span>2-year Warranty</span>
           </div>
         </div>
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
-      <StateBlock
-        isLoading={productQuery.isLoading}
-        isError={productQuery.isError}
-        error={productQuery.error}
-        isEmpty={!product}
-        emptyTitle="Product unavailable"
-        emptyMessage="This item is no longer available."
-        loadingText="Loading product details..."
-      >
-        <section className={styles.productLayout}>
-            <div className={`${styles.mediaPanel} panel`}>
-            <img src={safeProduct.imageUrl} alt={safeProduct.name} className={styles.heroImage} />
+        <div className="purchase-panel" aria-label="Purchase panel">
+          <p className="eyebrow">{product.brand}</p>
+          <h1 id="product-detail-title">{product.name}</h1>
+          <p>{product.description}</p>
+          <p className="product-detail-price">{currencyFormatter.format(product.price)}</p>
+          <p className={product.stockQty > 0 ? 'stock stock--available' : 'stock stock--empty'}>
+            {product.stockQty > 0 ? `${product.stockQty} in stock` : 'Out of stock'}
+          </p>
 
-<<<<<<< HEAD
-            <div className={styles.specTiles}>
-              <article>
-                <h4>CPU</h4>
-                <p>{safeProduct.cpu}</p>
-              </article>
-              <article>
-                <h4>RAM</h4>
-                <p>{safeProduct.ramGb} GB</p>
-              </article>
-              <article>
-                <h4>Storage</h4>
-                <p>{safeProduct.storageGb} GB SSD</p>
-              </article>
-              <article>
-                <h4>Screen</h4>
-                <p>{safeProduct.screenSize}"</p>
-              </article>
-            </div>
-=======
           {feedback.message ? (
             <p
               className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
@@ -195,58 +177,10 @@ export function ProductDetailPage() {
             <Link className="button button--secondary" to="/products">
               Back to catalog
             </Link>
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
           </div>
+        </div>
+      </div>
 
-<<<<<<< HEAD
-          <aside className={`${styles.purchasePanel} panel`}>
-            <span className={safeProduct.stockQty > 0 ? 'badge badgeSuccess' : 'badge badgeError'}>
-              {safeProduct.stockQty > 0 ? 'In stock' : 'Out of stock'}
-            </span>
-            <h1>{safeProduct.name}</h1>
-            <p className="pageSubtitle">{safeProduct.brand}</p>
-            <p className={styles.price}>{formatMoney(safeProduct.price)}</p>
-            <p>{safeProduct.description}</p>
-
-            <label className="field">
-              <span className="fieldLabel">Quantity</span>
-              <input
-                type="number"
-                min="1"
-                max={Math.max(1, safeProduct.stockQty)}
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-              />
-            </label>
-
-            <div className="inlineActions">
-              <button
-                type="button"
-                className="primaryButton"
-                onClick={handleAddToCart}
-                disabled={safeProduct.stockQty < 1 || addMutation.isPending}
-              >
-                {addMutation.isPending ? 'Adding...' : 'Add to cart'}
-              </button>
-              <Link to="/cart" className="secondaryButton">Go to cart</Link>
-            </div>
-
-            {feedback ? (
-              <AlertBox
-                variant={feedback.variant}
-                title={feedback.title}
-                message={feedback.message}
-                onClose={() => setFeedback(null)}
-              />
-            ) : null}
-          </aside>
-        </section>
-
-        <section className="panel">
-          <ReviewsPanel productId={safeProduct.id} />
-        </section>
-      </StateBlock>
-=======
       <div className="specifications-panel">
         <h2>Specifications</h2>
         <dl className="specifications-grid" aria-label="Detailed specifications">
@@ -318,7 +252,6 @@ export function ProductDetailPage() {
       </div>
 
       <ProductReviews productId={product.id} />
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
     </section>
   )
 }

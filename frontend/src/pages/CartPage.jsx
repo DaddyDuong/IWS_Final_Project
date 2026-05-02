@@ -1,17 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-<<<<<<< HEAD
-import { AlertBox } from '../components/shared/AlertBox'
-import { StateBlock } from '../components/shared/StateBlock'
-import { useCartMutations, useCartQuery } from '../hooks/useDomainData'
-import { formatMoney } from '../utils/format'
-import styles from './CartPage.module.css'
-
-export function CartPage() {
-  const cartQuery = useCartQuery()
-  const { updateMutation, removeMutation } = useCartMutations()
-
-=======
 import { mockCartItems, mockProducts } from '../lib/mockData'
 import { currencyFormatter, formatApiError } from '../lib/formatters'
 
@@ -24,66 +12,35 @@ export function CartPage() {
       })
       .filter(Boolean)
   )
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
   const [draftQuantities, setDraftQuantities] = useState({})
-  const [feedback, setFeedback] = useState(null)
+  const [feedback, setFeedback] = useState({ message: '', type: 'success' })
 
-<<<<<<< HEAD
-  const items = cartQuery.data?.items ?? []
-=======
   const items = cartItems
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
-  function getDraftQuantity(item) {
-    return draftQuantities[item.id] ?? item.quantity
+  function handleQuantityChange(itemId, nextValue) {
+    setDraftQuantities((current) => ({
+      ...current,
+      [itemId]: nextValue,
+    }))
   }
 
-<<<<<<< HEAD
-  async function handleUpdate(item) {
-    const nextQuantity = Number(getDraftQuantity(item))
-=======
   function handleUpdate(itemId) {
     const item = cartItems.find((entry) => entry.id === itemId)
     const fallbackQuantity = item?.quantity ?? 1
     const nextQuantity = Number.parseInt(draftQuantities[itemId] ?? String(fallbackQuantity), 10)
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
-    if (nextQuantity === item.quantity) {
-      setFeedback({
-        variant: 'error',
-        title: 'Quantity unchanged',
-        message: 'Choose a different quantity before updating.',
-      })
+    if (!Number.isInteger(nextQuantity) || nextQuantity < 1) {
+      setFeedback({ message: 'Quantity must be at least 1.', type: 'error' })
       return
     }
 
-    setFeedback(null)
+    if (item && nextQuantity === item.quantity) {
+      setFeedback({ message: 'Quantity is unchanged.', type: 'success' })
+      return
+    }
 
-<<<<<<< HEAD
-    await updateMutation.mutateAsync({ id: item.id, quantity: nextQuantity }, {
-      onSuccess: () => {
-        setFeedback({ variant: 'success', title: 'Cart updated', message: 'Item quantity updated successfully.' })
-      },
-      onError: () => {
-        setFeedback({ variant: 'error', title: 'Update failed', message: 'Unable to update item quantity right now.' })
-      },
-    })
-  }
-
-  async function handleRemove(itemId) {
-    setFeedback(null)
-
-    await removeMutation.mutateAsync(itemId, {
-      onSuccess: () => {
-        setFeedback({ variant: 'success', title: 'Item removed', message: 'Item removed from your cart.' })
-      },
-      onError: () => {
-        setFeedback({ variant: 'error', title: 'Remove failed', message: 'Unable to remove item right now.' })
-      },
-    })
-=======
     setCartItems((current) =>
       current.map((entry) =>
         entry.id === itemId
@@ -106,36 +63,14 @@ export function CartPage() {
       return nextDraft
     })
     setFeedback({ message: 'Item removed from cart.', type: 'success' })
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
   }
 
   return (
-    <section className={styles.pageSection}>
-      <header className="pageHeader">
-        <h1 className="pageTitle">Your cart</h1>
-        <p className="pageSubtitle">Review quantity, update cart lines, and continue to checkout.</p>
-      </header>
+    <section className="page page--customer" aria-labelledby="cart-title">
+      <p className="eyebrow">Cart</p>
+      <p className="step-label">Step 1 of 2</p>
+      <h1 id="cart-title">Your cart</h1>
 
-<<<<<<< HEAD
-      {feedback ? (
-        <AlertBox
-          variant={feedback.variant}
-          title={feedback.title}
-          message={feedback.message}
-          onClose={() => setFeedback(null)}
-        />
-      ) : null}
-
-      <div className={styles.layout}>
-        <StateBlock
-          isLoading={cartQuery.isLoading}
-          isError={cartQuery.isError}
-          error={cartQuery.error}
-          isEmpty={!items.length}
-          emptyTitle="Your cart is empty"
-          emptyMessage="Browse products and add your first item to continue checkout."
-          loadingText="Loading cart items..."
-=======
       <p className="catalog-feedback catalog-feedback--success" role="status" aria-live="polite">
         This cart is powered by mock data from <strong>mockData.js</strong>, so you can edit quantities and remove items without the backend.
       </p>
@@ -145,84 +80,11 @@ export function CartPage() {
           className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
           role={feedback.type === 'error' ? 'alert' : 'status'}
           aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
         >
-          <section className={styles.itemsPanel}>
-            {items.map((item) => (
-              <article key={item.id} className={styles.itemRow}>
-                <img src={item.product.imageUrl} alt={item.product.name} className={styles.image} />
-                <div className={styles.itemInfo}>
-                  <h3>{item.product.name}</h3>
-                  <p>{item.product.cpu} · {item.product.ramGb}GB · {item.product.storageGb}GB SSD</p>
-                  <p className={item.product.stockQty > 0 ? 'badge badgeSuccess' : 'badge badgeError'}>
-                    {item.product.stockQty > 0 ? 'In stock' : 'Out of stock'}
-                  </p>
-                </div>
+          {feedback.message}
+        </p>
+      ) : null}
 
-<<<<<<< HEAD
-                <div className={styles.controls}>
-                  <label className="field">
-                    <span className="fieldLabel">Quantity</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max={Math.max(1, item.product.stockQty)}
-                      value={getDraftQuantity(item)}
-                      onChange={(event) => {
-                        const value = Number(event.target.value)
-                        setDraftQuantities((previous) => ({ ...previous, [item.id]: value }))
-                      }}
-                    />
-                  </label>
-                  <div className="inlineActions">
-                    <button type="button" className="secondaryButton" onClick={() => handleUpdate(item)}>
-                      Update
-                    </button>
-                    <button type="button" className="ghostDangerButton" onClick={() => handleRemove(item.id)}>
-                      Remove
-                    </button>
-                  </div>
-                </div>
-
-                <p className={styles.price}>{formatMoney(item.product.price * item.quantity)}</p>
-              </article>
-            ))}
-          </section>
-        </StateBlock>
-
-        <aside className={`${styles.summaryPanel} panel`}>
-          <h2>Order summary</h2>
-          <dl>
-            <div>
-              <dt>Subtotal</dt>
-              <dd>{formatMoney(subtotal)}</dd>
-            </div>
-            <div>
-              <dt>Shipping</dt>
-              <dd>Calculated at checkout</dd>
-            </div>
-            <div>
-              <dt>Estimated tax</dt>
-              <dd>Calculated at checkout</dd>
-            </div>
-          </dl>
-          <p className={styles.total}>Total {formatMoney(subtotal)}</p>
-
-          <div className={styles.summaryActions}>
-            {items.length > 0 ? (
-              <Link to="/checkout" className="primaryButton">
-                Continue to checkout
-              </Link>
-            ) : (
-              <button type="button" className="primaryButton" disabled>
-                Continue to checkout
-              </button>
-            )}
-            <Link to="/shop" className="secondaryButton">Browse products</Link>
-          </div>
-        </aside>
-      </div>
-=======
       {items.length === 0 ? (
         <div className="catalog-feedback">
           <p>Your cart is empty.</p>
@@ -293,7 +155,6 @@ export function CartPage() {
           </Link>
         </div>
       ) : null}
->>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
     </section>
   )
 }

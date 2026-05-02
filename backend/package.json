@@ -7,6 +7,7 @@
     "dev": "node src/server.js",
     "start": "node src/server.js",
     "test": "vitest run",
+    "preprisma:seed": "prisma generate --config prisma.config.ts",
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "prisma:migrate": "prisma migrate dev --config prisma.config.ts",
     "prisma:seed": "prisma db seed --config prisma.config.ts"

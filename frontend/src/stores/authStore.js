@@ -1,32 +1,38 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import {
-  AUTH_STORAGE_KEY,
-  normalizePersistedSession,
-  sanitizeSessionToken,
-  sanitizeSessionUser,
-} from './authSession'
+import { sanitizeToken } from './authToken'
+
+const AUTH_STORAGE_KEY = 'laptop-retail-auth'
+
+const authStoreConfig = (set) => ({
+  token: null,
+  setToken: (token) => set({ token: sanitizeToken(token) }),
+  clearAuth: () => set({ token: null }),
+})
+
+function mergeAuthState(persistedState, currentState) {
+  const persistedToken = persistedState?.token
+  const token = sanitizeToken(persistedToken)
+
+  if (persistedToken && !token) {
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+    } catch {
+      // no-op: storage can be unavailable in private contexts
+    }
+  }
+
+  return {
+    ...currentState,
+    token,
+  }
+}
 
 export const useAuthStore = create(
-  persist(
-    (set) => ({
-      token: null,
-      user: null,
-      setSession: ({ token, user }) => set({
-        token: sanitizeSessionToken(token),
-        user: sanitizeSessionUser(user),
-      }),
-      setUser: (user) => set({ user: sanitizeSessionUser(user) }),
-      clearSession: () => set({ token: null, user: null }),
-    }),
-    {
-      name: AUTH_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ token: state.token, user: state.user }),
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...normalizePersistedSession(persistedState),
-      }),
-    },
-  ),
+  persist(authStoreConfig, {
+    name: AUTH_STORAGE_KEY,
+    storage: createJSONStorage(() => localStorage),
+    partialize: (state) => ({ token: state.token }),
+    merge: mergeAuthState,
+  }),
 )
