@@ -96,6 +96,19 @@ describe('ProductDetailPage', () => {
     expect(screen.getByRole('button', { name: /add to cart/i })).toBeInTheDocument()
   })
 
+  it('shows a not found state for missing products', async () => {
+    mockedApiGet.mockRejectedValueOnce({
+      response: {
+        status: 404,
+      },
+    })
+
+    renderProductDetail()
+
+    expect(await screen.findByText(/product not found/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /add to cart/i })).not.toBeInTheDocument()
+  })
+
   it('redirects unauthenticated shoppers to login when adding to cart', async () => {
     mockProductDetail()
     mockedFetchProductReviews.mockResolvedValueOnce([])

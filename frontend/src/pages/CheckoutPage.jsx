@@ -1,44 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { currencyFormatter, formatApiError } from '../lib/formatters'
 import { checkoutWithAddress, fetchAddresses, fetchCart } from '../lib/customerApi'
-import { currencyFormatter } from '../lib/formatters'
-import { formatApiError } from '../lib/formatters'
 
 export function CheckoutPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedAddressId, setSelectedAddressId] = useState('')
   const [feedback, setFeedback] = useState({ message: '', type: 'success' })
-
-  const addressesQuery = useQuery({
-    queryKey: ['addresses'],
-    queryFn: fetchAddresses,
-  })
 
   const cartQuery = useQuery({
     queryKey: ['cart'],
     queryFn: fetchCart,
   })
 
-  const checkoutMutation = useMutation({
-    mutationFn: checkoutWithAddress,
-    onSuccess: () => {
-      setFeedback({ message: 'Order placed successfully.', type: 'success' })
-      queryClient.invalidateQueries({ queryKey: ['cart'] })
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-    },
-    onError: (error) => {
-      setFeedback({
-        message: formatApiError(error, 'Unable to place order right now.'),
-        type: 'error',
-      })
-    },
+  const addressesQuery = useQuery({
+    queryKey: ['addresses'],
+    queryFn: fetchAddresses,
   })
 
-  const addresses = addressesQuery.data || []
   const items = cartQuery.data || []
+  const addresses = addressesQuery.data || []
 
-  const defaultAddressId = addresses.find((address) => address.isDefault)?.id || addresses[0]?.id || ''
+  const defaultAddressId = useMemo(
+    () => addresses.find((address) => address.isDefault)?.id || addresses[0]?.id || '',
+    [addresses],
+  )
+
+  useEffect(() => {
+    if (!selectedAddressId && defaultAddressId) {
+      setSelectedAddressId(defaultAddressId)
+    }
+  }, [defaultAddressId, selectedAddressId])
+
   const effectiveSelectedAddressId =
     addresses.some((address) => address.id === selectedAddressId) ? selectedAddressId : defaultAddressId
 
@@ -46,6 +41,24 @@ export function CheckoutPage() {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
   const shippingFee = 0
   const grandTotal = subtotal + shippingFee
+
+  const checkoutMutation = useMutation({
+    mutationFn: checkoutWithAddress,
+    onSuccess: async (order) => {
+      setFeedback({ message: 'Order placed successfully.', type: 'success' })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['cart'] }),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+      ])
+      navigate(`/profile/orders/${order.id}`)
+    },
+    onError: (error) => {
+      setFeedback({
+        message: formatApiError(error, 'Unable to place this order right now.'),
+        type: 'error',
+      })
+    },
+  })
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -64,16 +77,6 @@ export function CheckoutPage() {
       <p className="step-label">Step 2 of 2</p>
       <h1 id="checkout-title">Checkout</h1>
 
-      {cartQuery.isLoading || addressesQuery.isLoading ? (
-        <p className="catalog-feedback">Loading checkout data...</p>
-      ) : null}
-
-      {cartQuery.isError || addressesQuery.isError ? (
-        <p className="catalog-feedback catalog-feedback--error" role="alert" aria-live="assertive">
-          {formatApiError(cartQuery.error || addressesQuery.error, 'Unable to load checkout data right now.')}
-        </p>
-      ) : null}
-
       {feedback.message ? (
         <p
           className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
@@ -84,7 +87,21 @@ export function CheckoutPage() {
         </p>
       ) : null}
 
-      {items.length === 0 ? (
+      {cartQuery.isLoading || addressesQuery.isLoading ? <p>Loading checkout...</p> : null}
+
+      {cartQuery.isError ? (
+        <p className="catalog-feedback catalog-feedback--error">
+          {formatApiError(cartQuery.error, 'Unable to load cart right now.')}
+        </p>
+      ) : null}
+
+      {addressesQuery.isError ? (
+        <p className="catalog-feedback catalog-feedback--error">
+          {formatApiError(addressesQuery.error, 'Unable to load addresses right now.')}
+        </p>
+      ) : null}
+
+      {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
         <div className="catalog-feedback">
           <p>Your cart is empty. Add items before checkout.</p>
           <div className="cta-row">
@@ -95,19 +112,21 @@ export function CheckoutPage() {
         </div>
       ) : null}
 
-      {items.length > 0 ? (
+      {!cartQuery.isLoading && !cartQuery.isError && items.length > 0 ? (
         <form className="checkout-grid" onSubmit={handleSubmit}>
           <section className="checkout-card" aria-label="Shipping address">
             <h2>Shipping address</h2>
 
-            {addresses.length === 0 ? (
+            {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length === 0 ? (
               <div className="catalog-feedback">
                 <p>No saved addresses yet.</p>
                 <Link className="button button--secondary" to="/profile/addresses">
                   Add address
                 </Link>
               </div>
-            ) : (
+            ) : null}
+
+            {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length > 0 ? (
               <div className="address-options">
                 {addresses.map((address) => (
                   <label key={address.id} className="address-option">
@@ -129,7 +148,7 @@ export function CheckoutPage() {
                   </label>
                 ))}
               </div>
-            )}
+            ) : null}
           </section>
 
           <aside className="checkout-card checkout-card--summary" aria-label="Order summary">
@@ -171,7 +190,13 @@ export function CheckoutPage() {
             <button
               type="submit"
               className="button button--primary"
-              disabled={items.length === 0 || addresses.length === 0 || checkoutMutation.isPending}
+              disabled={
+                items.length === 0 ||
+                addresses.length === 0 ||
+                checkoutMutation.isPending ||
+                cartQuery.isLoading ||
+                addressesQuery.isLoading
+              }
             >
               {checkoutMutation.isPending ? 'Placing order...' : 'Place order'}
             </button>

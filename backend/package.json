@@ -10,7 +10,8 @@
     "preprisma:seed": "prisma generate --config prisma.config.ts",
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "prisma:migrate": "prisma migrate dev --config prisma.config.ts",
-    "prisma:seed": "prisma migrate deploy --config prisma.config.ts && prisma db seed --config prisma.config.ts"
+    "prisma:seed": "prisma migrate deploy --config prisma.config.ts && prisma db seed --config prisma.config.ts",
+    "prisma:seed:reset": "DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db} prisma migrate deploy --config prisma.config.ts && DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db} node prisma/seed.js --reset"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",

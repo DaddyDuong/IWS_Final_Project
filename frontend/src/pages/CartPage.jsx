@@ -17,13 +17,13 @@ export function CartPage() {
   const updateMutation = useMutation({
     mutationFn: updateCartItem,
     onSuccess: () => {
-      setDraftQuantities({})
       setFeedback({ message: 'Cart item updated.', type: 'success' })
+      setDraftQuantities({})
       queryClient.invalidateQueries({ queryKey: ['cart'] })
     },
     onError: (error) => {
       setFeedback({
-        message: formatApiError(error, 'Unable to update this cart item right now.'),
+        message: formatApiError(error, 'Unable to update this cart item.'),
         type: 'error',
       })
     },
@@ -37,7 +37,7 @@ export function CartPage() {
     },
     onError: (error) => {
       setFeedback({
-        message: formatApiError(error, 'Unable to remove this item right now.'),
+        message: formatApiError(error, 'Unable to remove this cart item.'),
         type: 'error',
       })
     },
@@ -82,14 +82,6 @@ export function CartPage() {
       <p className="step-label">Step 1 of 2</p>
       <h1 id="cart-title">Your cart</h1>
 
-      {cartQuery.isLoading ? <p className="catalog-feedback">Loading cart...</p> : null}
-
-      {cartQuery.isError ? (
-        <p className="catalog-feedback catalog-feedback--error">
-          {formatApiError(cartQuery.error, 'Unable to load your cart right now.')}
-        </p>
-      ) : null}
-
       {feedback.message ? (
         <p
           className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
@@ -100,7 +92,15 @@ export function CartPage() {
         </p>
       ) : null}
 
-      {items.length === 0 ? (
+      {cartQuery.isLoading ? <p>Loading cart...</p> : null}
+
+      {cartQuery.isError ? (
+        <p className="catalog-feedback catalog-feedback--error">
+          {formatApiError(cartQuery.error, 'Unable to load cart right now.')}
+        </p>
+      ) : null}
+
+      {!cartQuery.isLoading && !cartQuery.isError && items.length === 0 ? (
         <div className="catalog-feedback">
           <p>Your cart is empty.</p>
           <div className="cta-row">
@@ -111,7 +111,7 @@ export function CartPage() {
         </div>
       ) : null}
 
-      {items.length > 0 ? (
+      {!cartQuery.isLoading && !cartQuery.isError && items.length > 0 ? (
         <div className="cart-list">
           {items.map((item) => (
             <article key={item.id} className="cart-item">
@@ -138,22 +138,21 @@ export function CartPage() {
                     min="1"
                     max={999}
                     value={draftQuantities[item.id] ?? String(item.quantity)}
-                    disabled={updateMutation.isPending || removeMutation.isPending}
                     onChange={(event) => handleQuantityChange(item.id, event.target.value)}
                   />
                   <button
                     type="button"
                     className="button button--secondary"
-                    disabled={updateMutation.isPending || removeMutation.isPending}
                     onClick={() => handleUpdate(item.id)}
+                    disabled={updateMutation.isPending || removeMutation.isPending}
                   >
                     Update
                   </button>
                   <button
                     type="button"
                     className="button button--secondary"
-                    disabled={updateMutation.isPending || removeMutation.isPending}
                     onClick={() => handleRemove(item.id)}
+                    disabled={updateMutation.isPending || removeMutation.isPending}
                   >
                     Remove
                   </button>
@@ -164,7 +163,7 @@ export function CartPage() {
         </div>
       ) : null}
 
-      {items.length > 0 ? (
+      {!cartQuery.isLoading && !cartQuery.isError && items.length > 0 ? (
         <div className="checkout-summary">
           <p>Subtotal</p>
           <strong>{currencyFormatter.format(subtotal)}</strong>
