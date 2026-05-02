@@ -25,47 +25,21 @@ const accounts = {
   },
 };
 
-const sampleProducts = [
-  {
-    sku: 'DEMO-001',
-    name: 'Dell XPS 14 (9440)',
-    brand: 'Dell',
-    cpu: 'Intel Core Ultra 7 155H',
-    ramGb: 16,
-    storageGb: 512,
-    screenSize: '14.5',
-    price: 19990000,
-    stockQty: 8,
-    description: 'Premium 14-inch productivity machine with modern industrial design.',
-    imageUrl: 'https://example.com/dell-xps-14.png',
-  },
-  {
-    sku: 'DEMO-002',
-    name: 'ThinkPad X1 Carbon Gen 12',
-    brand: 'Lenovo',
-    cpu: 'Intel Core Ultra 7 155U',
-    ramGb: 16,
-    storageGb: 512,
-    screenSize: '14.0',
-    price: 17490000,
-    stockQty: 7,
-    description: 'Business-focused ultralight laptop with durable premium chassis.',
-    imageUrl: 'https://example.com/thinkpad-x1-carbon.png',
-  },
-  {
-    sku: 'DEMO-003',
-    name: 'HP Spectre x360 14 (2024)',
-    brand: 'HP',
-    cpu: 'Intel Core Ultra 7 155H',
-    ramGb: 16,
-    storageGb: 1024,
-    screenSize: '14.0',
-    price: 15990000,
-    stockQty: 9,
-    description: 'Premium 2-in-1 laptop with convertible flexibility.',
-    imageUrl: 'https://example.com/hp-spectre-x360.png',
-  },
-];
+import { mockProducts } from '../../frontend/src/lib/mockData.js';
+
+const sampleProducts = mockProducts.map(p => ({
+  sku: p.id,
+  name: p.name,
+  brand: p.brand,
+  cpu: p.cpu || 'Unknown CPU',
+  ramGb: p.ramGb || 16,
+  storageGb: p.storageGb || 512,
+  screenSize: p.screen || '15.6"',
+  price: p.price,
+  stockQty: Math.floor(Math.random() * 20) + 5,
+  description: p.description || `${p.brand} ${p.name} - A great laptop for all your needs.`,
+  imageUrl: p.imageUrl || `https://placehold.co/400x300/e2e8f0/1e293b?text=${encodeURIComponent(p.name)}`,
+}));
 
 async function clearDatabase(tx) {
   await tx.review.deleteMany();

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { currencyFormatter, formatApiError } from '../lib/formatters'
-import { checkoutWithAddress, fetchAddresses, fetchCart } from '../lib/customerApi'
+import { checkoutWithAddress, fetchAddresses, fetchCart, removeCartItem, addCartItem } from '../lib/customerApi'
+import styles from './CheckoutPage.module.css'
 
 export function CheckoutPage() {
   const navigate = useNavigate()
@@ -14,6 +15,43 @@ export function CheckoutPage() {
     queryKey: ['cart'],
     queryFn: fetchCart,
   })
+
+  const removeMutation = useMutation({
+    mutationFn: removeCartItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+    },
+  })
+
+  const addMutation = useMutation({
+    mutationFn: addCartItem,
+    onSuccess: () => {
+      setDeletedItem(null)
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+    }
+  })
+
+  const [deletedItem, setDeletedItem] = useState(null)
+  const [undoTimeoutId, setUndoTimeoutId] = useState(null)
+
+  const handleRemove = (item) => {
+    removeMutation.mutate(item.id, {
+      onSuccess: () => {
+        setDeletedItem(item)
+        if (undoTimeoutId) clearTimeout(undoTimeoutId)
+        const timeoutId = setTimeout(() => {
+          setDeletedItem(null)
+        }, 7000)
+        setUndoTimeoutId(timeoutId)
+      }
+    })
+  }
+
+  const handleUndo = () => {
+    if (deletedItem && deletedItem.product) {
+      addMutation.mutate({ productId: deletedItem.product.id, quantity: deletedItem.quantity || 1 })
+    }
+  }
 
   const addressesQuery = useQuery({
     queryKey: ['addresses'],
@@ -72,10 +110,8 @@ export function CheckoutPage() {
   }
 
   return (
-    <section className="page page--customer" aria-labelledby="checkout-title">
-      <p className="eyebrow">Checkout</p>
-      <p className="step-label">Step 2 of 2</p>
-      <h1 id="checkout-title">Checkout</h1>
+    <section className={styles.checkoutContainer} aria-labelledby="checkout-title">
+      <h1 id="checkout-title" className="visually-hidden" style={{display: 'none'}}>Checkout</h1>
 
       {feedback.message ? (
         <p
@@ -113,96 +149,155 @@ export function CheckoutPage() {
       ) : null}
 
       {!cartQuery.isLoading && !cartQuery.isError && items.length > 0 ? (
-        <form className="checkout-grid" onSubmit={handleSubmit}>
-          <section className="checkout-card" aria-label="Shipping address">
-            <h2>Shipping address</h2>
-
-            {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length === 0 ? (
-              <div className="catalog-feedback">
-                <p>No saved addresses yet.</p>
-                <Link className="button button--secondary" to="/profile/addresses">
-                  Add address
+        <form className={styles.checkoutGrid} onSubmit={handleSubmit}>
+          {/* LEFT COLUMN */}
+          <div className={styles.leftColumn}>
+            {/* Choose Shipping Address */}
+            <section aria-label="Shipping address">
+              <div className={styles.addressHeader}>
+                <h2>Choose Shipping Address</h2>
+                <Link to="/profile/addresses" className={styles.addNewAddressBtn}>
+                  + Add New Address
                 </Link>
               </div>
-            ) : null}
 
-            {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length > 0 ? (
-              <div className="address-options">
-                {addresses.map((address) => (
-                  <label key={address.id} className="address-option">
-                    <input
-                      type="radio"
-                      name="addressId"
-                      value={address.id}
-                      checked={effectiveSelectedAddressId === address.id}
-                      disabled={checkoutMutation.isPending}
-                      onChange={(event) => setSelectedAddressId(event.target.value)}
-                    />
-                    <span>
-                      <strong>{address.receiver}</strong>
-                      <span>{address.phone}</span>
-                      <span>
-                        {address.line1}, {address.ward}, {address.district}, {address.city}
-                      </span>
-                    </span>
-                  </label>
+              {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length === 0 ? (
+                <div className="catalog-feedback">
+                  <p>No saved addresses yet.</p>
+                </div>
+              ) : null}
+
+              {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length > 0 ? (
+                <div className={styles.addressOptions}>
+                  {addresses.map((address) => {
+                    const isSelected = effectiveSelectedAddressId === address.id
+                    const isDefault = address.isDefault
+                    return (
+                      <label key={address.id} className={`${styles.addressCard} ${isSelected ? styles.selected : styles.unselected}`}>
+                        <input
+                          type="radio"
+                          name="addressId"
+                          value={address.id}
+                          checked={isSelected}
+                          disabled={checkoutMutation.isPending}
+                          onChange={(event) => setSelectedAddressId(event.target.value)}
+                          style={{ display: 'none' }}
+                        />
+                        {isSelected && <span className={styles.defaultBadge}>{isDefault ? 'DEFAULT' : 'SELECTED'}</span>}
+                        <div className={styles.addressName}>{address.receiver}</div>
+                        <div className={styles.addressDetails}>
+                          {address.line1}, {address.ward}, {address.district}, {address.city}
+                        </div>
+                        <div className={styles.addressPhone}>
+                          📞 {address.phone}
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </section>
+
+            {/* Review Items */}
+            <section className={styles.reviewItemsSection} aria-label="Review Items">
+              <h2 className={styles.sectionTitle}>Review Items</h2>
+              <div className={styles.itemsList}>
+                {items.map((item) => (
+                  <div key={item.id} className={styles.itemCard}>
+                    <img src={item.product.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop'} alt={item.product.name} className={styles.itemImage} />
+                    <div className={styles.itemInfo}>
+                      <h3 className={styles.itemName}>{item.product.name}</h3>
+                      <p className={styles.itemSpecs}>{item.product.brand || 'No specs'}</p>
+                      <div className={styles.itemMeta}>
+                        <span className={styles.qtyTag}>Qty: {item.quantity}</span>
+                      </div>
+                    </div>
+                    <div className={styles.itemRight}>
+                      <div className={styles.itemPrice}>
+                        {currencyFormatter.format(item.product.price * item.quantity)}
+                      </div>
+                      <button 
+                        type="button"
+                        className={styles.removeBtn}
+                        onClick={() => handleRemove(item)}
+                        disabled={removeMutation.isPending}
+                      >
+                        🗑️ Remove
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
-            ) : null}
-          </section>
+            </section>
+          </div>
 
-          <aside className="checkout-card checkout-card--summary" aria-label="Order summary">
-            <div className="checkout-summary__header">
-              <div>
-                <p className="checkout-summary__eyebrow">Order summary</p>
-                <h2>Review your items</h2>
-              </div>
-              <span className="checkout-summary__badge">{totalItems} items</span>
-            </div>
-
-            <div className="checkout-summary__items" aria-label="Items in your order">
-              {items.map((item) => (
-                <div key={item.id} className="checkout-summary__item">
-                  <div>
-                    <strong>{item.product.name}</strong>
-                    <span>Qty {item.quantity}</span>
-                  </div>
-                  <strong>{currencyFormatter.format(item.product.price * item.quantity)}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="checkout-summary__totals">
-              <div>
-                <span>Subtotal</span>
+          {/* RIGHT COLUMN */}
+          <aside className={styles.rightColumn} aria-label="Order summary">
+            {/* Order Summary Card */}
+            <div className={styles.summaryCard}>
+              <h2>Order Summary</h2>
+              
+              <div className={styles.summaryRow}>
+                <span>Items ({totalItems} items)</span>
                 <strong>{currencyFormatter.format(subtotal)}</strong>
               </div>
-              <div>
-                <span>Shipping fee</span>
-                <strong>{shippingFee === 0 ? 'Free' : currencyFormatter.format(shippingFee)}</strong>
+              
+              <div className={styles.summaryRow}>
+                <span>Shipping Fee</span>
+                <span className={styles.freeBadge}>FREE</span>
               </div>
-              <div className="checkout-summary__grand-total">
-                <span>Total</span>
-                <strong>{currencyFormatter.format(grandTotal)}</strong>
+              
+              <div className={styles.summaryRow}>
+                <span>Tax</span>
+                <span>Included</span>
               </div>
+              
+              <hr className={styles.summaryDivider} />
+              
+              <div className={styles.totalRow}>
+                <span className={styles.totalLabel}>Total Price</span>
+                <span className={styles.totalValue}>{currencyFormatter.format(grandTotal)}</span>
+              </div>
+              
+              <button
+                type="submit"
+                className={styles.placeOrderBtn}
+                disabled={
+                  items.length === 0 ||
+                  addresses.length === 0 ||
+                  checkoutMutation.isPending ||
+                  cartQuery.isLoading ||
+                  addressesQuery.isLoading
+                }
+              >
+                {checkoutMutation.isPending ? 'Placing Order...' : 'Place Order'}
+              </button>
             </div>
 
-            <button
-              type="submit"
-              className="button button--primary"
-              disabled={
-                items.length === 0 ||
-                addresses.length === 0 ||
-                checkoutMutation.isPending ||
-                cartQuery.isLoading ||
-                addressesQuery.isLoading
-              }
-            >
-              {checkoutMutation.isPending ? 'Placing order...' : 'Place order'}
-            </button>
+            {/* Buyer's Protection Card */}
+            <div className={styles.protectionCard}>
+              <div className={styles.protectionIcon}>✨</div>
+              <div className={styles.protectionContent}>
+                <h3>Buyer's Protection</h3>
+                <p>Your purchase is covered by our 2-year premium warranty and tech concierge service.</p>
+              </div>
+            </div>
           </aside>
         </form>
       ) : null}
+
+      {deletedItem && (
+        <div 
+          className="undo-notification"
+          onClick={handleUndo}
+          style={{
+            opacity: addMutation.isPending ? 0.7 : 1,
+            pointerEvents: addMutation.isPending ? 'none' : 'auto'
+          }}
+        >
+          {addMutation.isPending ? 'Restoring...' : 'Undo your behavior'}
+        </div>
+      )}
     </section>
   )
 }
