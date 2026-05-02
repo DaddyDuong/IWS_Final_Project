@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+<<<<<<< HEAD
 import { AlertBox } from '../components/shared/AlertBox'
 import { StateBlock } from '../components/shared/StateBlock'
 import { useCartMutations, useCartQuery } from '../hooks/useDomainData'
@@ -10,10 +11,28 @@ export function CartPage() {
   const cartQuery = useCartQuery()
   const { updateMutation, removeMutation } = useCartMutations()
 
+=======
+import { mockCartItems, mockProducts } from '../lib/mockData'
+import { currencyFormatter, formatApiError } from '../lib/formatters'
+
+export function CartPage() {
+  const [cartItems, setCartItems] = useState(() =>
+    mockCartItems
+      .map((item) => {
+        const product = mockProducts.find((entry) => entry.id === item.productId)
+        return product ? { ...item, product } : null
+      })
+      .filter(Boolean)
+  )
+>>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
   const [draftQuantities, setDraftQuantities] = useState({})
   const [feedback, setFeedback] = useState(null)
 
+<<<<<<< HEAD
   const items = cartQuery.data?.items ?? []
+=======
+  const items = cartItems
+>>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
@@ -21,8 +40,15 @@ export function CartPage() {
     return draftQuantities[item.id] ?? item.quantity
   }
 
+<<<<<<< HEAD
   async function handleUpdate(item) {
     const nextQuantity = Number(getDraftQuantity(item))
+=======
+  function handleUpdate(itemId) {
+    const item = cartItems.find((entry) => entry.id === itemId)
+    const fallbackQuantity = item?.quantity ?? 1
+    const nextQuantity = Number.parseInt(draftQuantities[itemId] ?? String(fallbackQuantity), 10)
+>>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
 
     if (nextQuantity === item.quantity) {
       setFeedback({
@@ -35,6 +61,7 @@ export function CartPage() {
 
     setFeedback(null)
 
+<<<<<<< HEAD
     await updateMutation.mutateAsync({ id: item.id, quantity: nextQuantity }, {
       onSuccess: () => {
         setFeedback({ variant: 'success', title: 'Cart updated', message: 'Item quantity updated successfully.' })
@@ -56,6 +83,30 @@ export function CartPage() {
         setFeedback({ variant: 'error', title: 'Remove failed', message: 'Unable to remove item right now.' })
       },
     })
+=======
+    setCartItems((current) =>
+      current.map((entry) =>
+        entry.id === itemId
+          ? {
+              ...entry,
+              quantity: nextQuantity,
+            }
+          : entry
+      )
+    )
+    setDraftQuantities({})
+    setFeedback({ message: 'Cart item updated.', type: 'success' })
+  }
+
+  function handleRemove(itemId) {
+    setCartItems((current) => current.filter((entry) => entry.id !== itemId))
+    setDraftQuantities((current) => {
+      const nextDraft = { ...current }
+      delete nextDraft[itemId]
+      return nextDraft
+    })
+    setFeedback({ message: 'Item removed from cart.', type: 'success' })
+>>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
   }
 
   return (
@@ -65,6 +116,7 @@ export function CartPage() {
         <p className="pageSubtitle">Review quantity, update cart lines, and continue to checkout.</p>
       </header>
 
+<<<<<<< HEAD
       {feedback ? (
         <AlertBox
           variant={feedback.variant}
@@ -83,6 +135,17 @@ export function CartPage() {
           emptyTitle="Your cart is empty"
           emptyMessage="Browse products and add your first item to continue checkout."
           loadingText="Loading cart items..."
+=======
+      <p className="catalog-feedback catalog-feedback--success" role="status" aria-live="polite">
+        This cart is powered by mock data from <strong>mockData.js</strong>, so you can edit quantities and remove items without the backend.
+      </p>
+
+      {feedback.message ? (
+        <p
+          className={`catalog-feedback ${feedback.type === 'error' ? 'catalog-feedback--error' : 'catalog-feedback--success'}`}
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+>>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
         >
           <section className={styles.itemsPanel}>
             {items.map((item) => (
@@ -96,6 +159,7 @@ export function CartPage() {
                   </p>
                 </div>
 
+<<<<<<< HEAD
                 <div className={styles.controls}>
                   <label className="field">
                     <span className="fieldLabel">Quantity</span>
@@ -158,6 +222,78 @@ export function CartPage() {
           </div>
         </aside>
       </div>
+=======
+      {items.length === 0 ? (
+        <div className="catalog-feedback">
+          <p>Your cart is empty.</p>
+          <div className="cta-row">
+            <Link className="button button--secondary" to="/products">
+              Browse products
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="cart-list">
+          {items.map((item) => (
+            <article key={item.id} className="cart-item">
+              <img
+                src={item.product.imageUrl}
+                alt={item.product.name}
+                className="cart-item__image"
+                width="180"
+                height="135"
+              />
+
+              <div className="cart-item__content">
+                <div>
+                  <h2>{item.product.name}</h2>
+                  <p className="product-specs">{item.product.brand}</p>
+                  <p>{currencyFormatter.format(item.product.price)}</p>
+                </div>
+
+                <div className="cart-item__actions">
+                  <label htmlFor={`quantity-${item.id}`}>Quantity</label>
+                  <input
+                    id={`quantity-${item.id}`}
+                    type="number"
+                    min="1"
+                    max={999}
+                    value={draftQuantities[item.id] ?? String(item.quantity)}
+                    onChange={(event) => handleQuantityChange(item.id, event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={() => handleUpdate(item.id)}
+                  >
+                    Update
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={() => handleRemove(item.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="checkout-summary">
+          <p>Subtotal</p>
+          <strong>{currencyFormatter.format(subtotal)}</strong>
+          <Link className="button button--primary" to="/checkout">
+            Continue to checkout
+          </Link>
+        </div>
+      ) : null}
+>>>>>>> 8633106a76b27636b43164c85c26e5b3d9c0b07c
     </section>
   )
 }
