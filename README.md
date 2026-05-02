@@ -7,9 +7,10 @@ Full-stack laptop retail web app for the IWS final project.
 - Customer auth flow: sign in/register in one route, forgot password, reset password
 - Product catalog with filtering, sorting, pagination, and comparison
 - Product detail with add-to-cart and review CRUD
-- Cart and checkout flows
+- API-backed cart and checkout flows
 - Account hub, addresses CRUD/default handling, orders list/detail/cancel
 - Manager-only internal product CRUD studio
+- Resettable Prisma seed for deterministic local demo data
 
 ## Repository structure
 
@@ -20,10 +21,10 @@ Full-stack laptop retail web app for the IWS final project.
 │   ├── src/
 │   ├── tests/
 │   └── README.md
-├── frontend/            # active v2 redesign app
+├── frontend/
 │   ├── public/
 │   ├── src/
-│   ├── tests/
+│   │   └── test/
 │   └── README.md
 ```
 
@@ -37,13 +38,15 @@ Full-stack laptop retail web app for the IWS final project.
 Run these commands from the repository root:
 
 1. Install dependencies:
-    - `npm install --prefix backend`
-    - `npm install --prefix frontend`
+   - `npm install --prefix backend`
+   - `npm install --prefix frontend`
 2. Prepare local database:
-    - `npm run prisma:seed --prefix backend`
+   - `npm run prisma:generate --prefix backend`
+   - `npm run prisma:seed:reset --prefix backend`
+   - This recreates the local SQLite demo state with accounts, products, cart items, an order, an address, and reviews.
 3. Start backend (Terminal 1, choose one):
-    - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
-    - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+   - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+   - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
 4. Start frontend (Terminal 2):
    - `npm run dev --prefix frontend`
 5. Open `http://localhost:5173`
@@ -54,10 +57,10 @@ Run these commands from the repository root:
 - Backend API base: `http://localhost:8080/api/v1`
 - Backend health: `http://localhost:8080/health`
 
-## Seeded manager account
+## Seeded demo accounts
 
-- Email: `manager@laptop.local`
-- Password: `Manager@123`
+- Manager: `manager@laptop.local` / `Manager@123`
+- Demo customer: `demo.customer@laptop.local` / `DemoCustomer@123`
 
 ## Common commands
 
@@ -65,8 +68,6 @@ Run these commands from the repository root:
 - Frontend lint: `npm run lint --prefix frontend`
 - Frontend unit tests: `npm run test:run --prefix frontend`
 - Frontend build: `npm run build --prefix frontend`
-- Frontend E2E (flows + visual): `npm run e2e --prefix frontend`
-- Frontend visual snapshot update: `npm run e2e:update-snapshots --prefix frontend`
 
 ## Recommended verification gate
 
@@ -76,7 +77,6 @@ Run before handoff:
 2. `npm run lint --prefix frontend`
 3. `npm run test:run --prefix frontend`
 4. `npm run build --prefix frontend`
-5. `npm run e2e --prefix frontend`
 
 ## Submission checklist (IWS)
 
@@ -87,6 +87,6 @@ Run before handoff:
 
 ## Notes
 
-- Active frontend route contract is the consolidated v2 map documented in `frontend/README.md`.
+- The frontend consumes live API data for products, product detail, cart, and checkout.
 - Backend and frontend runbooks live in `backend/README.md` and `frontend/README.md`.
-- Frontend Playwright suite uses mock API fixtures by default; use a running backend for live integration checks.
+- Rerun `npm run prisma:seed:reset --prefix backend` whenever you want to restore the demo state.

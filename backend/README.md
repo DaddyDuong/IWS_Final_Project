@@ -38,7 +38,8 @@ backend/
 2. Generate Prisma client:
    - `npm run prisma:generate`
 3. Seed database:
-   - `npm run prisma:seed`
+   - `npm run prisma:seed` to apply migrations and upsert sample data
+   - `npm run prisma:seed:reset` to reset the local SQLite DB and repopulate the demo journey
 4. Start API server (choose one):
    - Explicit dev secret: `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev`
    - Env fallback mode: `ALLOW_INSECURE_DEV_JWT=true ENABLE_DEMO_RESET_TOKEN=true npm run dev`
@@ -130,6 +131,7 @@ All multi-record GET endpoints use server-side pagination via `page` + `limit`.
 - `npm run prisma:generate`: generate Prisma client
 - `npm run prisma:migrate`: run local migrations
 - `npm run prisma:seed`: apply migrations and seed local data
+- `npm run prisma:seed:reset`: reset local demo data and seed a fresh journey
 
 ## Testing
 
@@ -138,6 +140,7 @@ All multi-record GET endpoints use server-side pagination via `page` + `limit`.
   - `npm test -- tests/products/listProducts.test.js`
   - `npm test -- tests/orders/checkout.test.js`
   - `npm test -- tests/security/rateLimit.test.js`
+- Frontend contract coverage: `backend/tests/frontendContracts.test.js` locks the response shapes consumed by the React client.
 
 ## Verification gate
 
@@ -150,11 +153,14 @@ Run before handoff:
 `prisma/seed.js` creates or updates:
 
 - Manager user: `manager@laptop.local` / `Manager@123`
+- Demo customer: `demo.customer@laptop.local` / `DemoCustomer@123`
 - Sample products for catalog, cart, and checkout tests
+- Demo address, cart items, delivered order, and reviews for the customer
 
 ## Troubleshooting
 
 - `JWT_SECRET is required`: set `JWT_SECRET` or set `ALLOW_INSECURE_DEV_JWT=true`.
-- `table not found` or Prisma model errors: re-run `npm run prisma:seed`.
+- `table not found` or Prisma model errors: re-run `npm run prisma:seed:reset`.
+- Demo data looks stale: re-run `npm run prisma:seed:reset`.
 - CORS blocked in browser: confirm frontend origin is in `CORS_ALLOWED_ORIGINS`.
 - Forgot-password does not return demo token: set `ENABLE_DEMO_RESET_TOKEN=true`.

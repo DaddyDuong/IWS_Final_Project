@@ -1,6 +1,6 @@
 # Frontend App
 
-React client for the Laptop Retail Website. It consumes the backend REST API and covers customer-facing shopping and account flows.
+React client for the Laptop Retail Website. It consumes the backend REST API and drives the product catalog, product detail, cart, checkout, and account flows from live data.
 
 ## Stack
 
@@ -11,19 +11,19 @@ React client for the Laptop Retail Website. It consumes the backend REST API and
 - Axios API client
 - Vitest + Testing Library
 
-## Published frontend structure
+## Project layout
 
 ```text
 frontend/
 ├── public/
 ├── src/
-│   ├── components/     # layout + reusable UI blocks
-│   ├── lib/            # api client, query helpers, formatters
-│   ├── pages/          # route-level pages
-│   ├── stores/         # auth token store
-│   ├── test/           # frontend tests
-│   ├── App.jsx         # route configuration
-│   ├── main.jsx        # providers + app bootstrap
+│   ├── components/
+│   ├── lib/
+│   ├── pages/
+│   ├── stores/
+│   ├── test/
+│   ├── App.jsx
+│   ├── main.jsx
 │   └── index.css
 ├── package.json
 └── vite.config.js
@@ -31,54 +31,59 @@ frontend/
 
 ## Route map
 
-- Public:
-  - `/`
-  - `/products`
-  - `/products/:id`
-  - `/login`
-  - `/register`
-  - `/forgot-password`
-  - `/reset-password`
-- Protected (`RequireAuth`):
-  - `/profile`
-  - `/cart`
-  - `/checkout`
-  - `/profile/orders`
-  - `/profile/orders/:id`
-  - `/profile/addresses`
+Public:
+
+- `/`
+- `/products`
+- `/products/:id`
+- `/login`
+- `/register`
+- `/forgot-password`
+- `/reset-password`
+
+Protected (`RequireAuth`):
+
+- `/profile`
+- `/cart`
+- `/checkout`
+- `/profile/orders`
+- `/profile/orders/:id`
+- `/profile/addresses`
 
 ## Data and state flow
 
-- API base URL is configured in `src/lib/apiClient.js` via `VITE_API_BASE_URL`.
-- `apiClient` attaches the JWT from `src/stores/authStore.js` to `Authorization` headers.
-- Product list search params are normalized with `src/lib/buildProductQuery.js`.
-- React Query client defaults are defined in `src/lib/queryClient.js`.
-- Domain API calls are grouped in `src/lib/customerApi.js`.
+- `src/lib/apiClient.js` configures the Axios base URL via `VITE_API_BASE_URL`.
+- `src/lib/customerApi.js` groups product, cart, checkout, review, address, and order API calls.
+- `src/lib/buildProductQuery.js` normalizes catalog filters and keeps search params canonical.
+- `src/stores/authStore.js` persists the JWT and user payload in local storage.
+- `src/lib/queryClient.js` defines React Query defaults.
 
-## Where to edit
+## Key pages
 
-- Route definitions: `src/App.jsx`
-- Page screens: `src/pages/`
-- Reusable UI blocks: `src/components/`
-- API request helpers: `src/lib/apiClient.js` and `src/lib/customerApi.js`
-- Auth/session persistence: `src/stores/authStore.js`
-- Product query URL normalization: `src/lib/buildProductQuery.js`
-- Frontend tests: `src/test/`
+- `ProductsPage` owns catalog filters, pagination, and the comparison strip.
+- `ProductDetailPage` handles the product view, reviews, and add-to-cart flow.
+- `CartPage` handles quantity updates and item removal.
+- `CheckoutPage` selects a saved address and places orders.
+- `ProfilePage`, `OrdersPage`, `OrderDetailPage`, and `AddressesPage` cover account management.
+- `LoginPage`, `RegisterPage`, `ForgotPasswordPage`, and `ResetPasswordPage` cover auth.
 
 ## Run locally
 
 Requirements:
 
 - Node.js 20+
-- Backend API running (default `http://localhost:8080/api/v1`)
+- Backend API running at `http://localhost:8080/api/v1`
 
 Commands:
 
 1. Install dependencies:
    - `npm install`
-2. Start dev server:
+2. Seed and start the backend in another terminal:
+   - `npm run prisma:seed:reset --prefix backend`
+   - `JWT_SECRET=dev-insecure-jwt-secret ENABLE_DEMO_RESET_TOKEN=true npm run dev --prefix backend`
+3. Start the frontend:
    - `npm run dev`
-3. Open:
+4. Open:
    - `http://localhost:5173`
 
 ## Environment variable
@@ -95,35 +100,15 @@ Commands:
 - `npm run lint`: ESLint
 - `npm run test`: Vitest watch
 - `npm run test:run`: Vitest one-shot
-- `npm run e2e`: Playwright flow + visual suites
-- `npm run e2e:visual`: Playwright visual suite only
-- `npm run e2e:update-snapshots`: refresh visual baselines
 
-## Test architecture
+## Testing
 
-- Unit tests (`npm run test:run`) validate query utilities and auth session behavior.
-- E2E tests (`npm run e2e`) use the in-repo mock API fixture at `tests/e2e/fixtures/mockApi.js`.
-- Visual coverage includes responsive snapshots for the main flows, including the empty-cart checkout-disabled state.
-- Because E2E runs on mocked API responses, backend does not need to be running for Playwright suites.
-- For real API integration checks, run backend + frontend dev servers after initializing the backend database with `npm run prisma:seed --prefix backend`.
-
-## Verification gate
-
-Run before handoff:
-
-1. `npm run lint`
-2. `npm run test:run`
-3. `npm run build`
-4. `npm run e2e`
+- Unit and component tests live in `src/test/`.
+- Tests mock API responses and cover query helpers, page behavior, and auth/session state.
+- There is no frontend Playwright suite in this repository right now; use the seeded backend for manual integration checks.
 
 ## Troubleshooting
 
-- If every protected page redirects to login, clear stale auth state in local storage and sign in again.
-- If UI actions fail with network errors, verify `VITE_API_BASE_URL` and backend server status.
-- If product filters behave unexpectedly, check URL query params generated by `buildProductQuery`.
-
-## Verification checklist
-
-- `npm run test:run`
-- `npm run lint`
-- `npm run build`
+- If protected routes keep bouncing to login, clear local storage and sign in again.
+- If data does not load, verify `VITE_API_BASE_URL` and that the backend is running.
+- If seeded demo data looks stale, rerun `npm run prisma:seed:reset --prefix backend`.
