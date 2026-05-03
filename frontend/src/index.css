@@ -4150,8 +4150,362 @@ a {
 /* RECOMMENDED SECTION */
 .recommended-panel {
   margin-top: 60px;
-  margin-bottom: 80px;
 }
+
+.manage-destinations-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 60px 20px;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+
+.destinations-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.destinations-header {
+  margin-bottom: 48px;
+}
+
+.destinations-header h1 {
+  font-size: 56px;
+  font-weight: 800;
+  color: #003366;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.03em;
+}
+
+.destinations-header p {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8e8e8e;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.destinations-layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .destinations-layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* Left Column - Add Form */
+.add-address-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+  border-left: 8px solid #003366;
+  position: relative;
+}
+
+.add-address-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #003366;
+  margin: 0 0 40px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.destination-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.dest-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dest-field--full {
+  grid-column: 1 / -1;
+}
+
+.dest-field--third {
+  grid-column: span 1;
+}
+
+.dest-field label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a1a1a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dest-field input {
+  background-color: #f1f3f5;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-size: 16px;
+  color: #1a1a1a;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.dest-field input::placeholder {
+  color: #adb5bd;
+}
+
+.dest-field input:focus {
+  background-color: #e9ecef;
+  outline: none;
+}
+
+.dest-checkbox-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  font-size: 16px;
+  color: #1a1a1a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dest-checkbox-row input {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.btn-save-destination {
+  grid-column: 1 / -1;
+  background-color: #003366;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 20px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+  transition: all 0.2s;
+}
+
+.btn-save-destination:hover {
+  background-color: #002244;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+}
+
+/* Right Column - Address List */
+.address-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+  padding-bottom: 12px;
+}
+
+.address-list-header h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #003366;
+  margin: 0;
+}
+
+.address-count-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8e8e8e;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.destinations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dest-card-modern {
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.dest-card-modern--default {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+}
+
+.dest-card-modern--secondary {
+  background: #010d1907;
+  border: 1px solid transparent;
+}
+
+
+.dest-card-modern:hover {
+  transform: translateY(-2px);
+}
+
+.dest-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.dest-card-header h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tag-primary-contact {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.badge-dest-default {
+  background-color: #c3e6cb;
+  color: #155724;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-dest-set-default {
+  background-color: #d4edda;
+  color: #155724;
+  border: none;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.btn-dest-set-default:hover {
+  background-color: #c3e6cb;
+}
+
+.dest-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dest-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  color: #495057;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.dest-info-row svg {
+  margin-top: 4px;
+}
+
+.dest-info-row strong {
+  display: block;
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 18px;
+}
+
+.dest-card-actions-modern {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.action-link-edit {
+  color: #003366;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  background: #f0f7ff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.action-link-delete {
+  color: #d32f2f;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  background: #fff5f5;
+  padding: 10px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.dest-card-actions-mini {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+}
+
+.icon-btn-edit,
+.icon-btn-delete {
+  background: none;
+  border: none;
+  color: #adb5bd;
+  cursor: pointer;
+  font-size: 20px;
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.icon-btn-edit:hover {
+  color: #003366;
+}
+
+.icon-btn-delete:hover {
+  color: #d32f2f;
+}
+
 
 .recommended-grid {
   display: grid;
