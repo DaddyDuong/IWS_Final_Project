@@ -393,7 +393,7 @@ a {
   justify-items: center;
   gap: 0px;
   text-align: center;
-  padding-bottom: 52px;
+  padding-bottom: 2vw;
   animation: hero-slide-enter 600ms ease;
 }
 
@@ -417,8 +417,7 @@ a {
 .hero-slide-content--left {
   max-width: none;
   margin: 0;
-  padding-left: 0;
-  padding-right: 24px;
+  padding-right: 1.5vw;
   place-items: start;
   justify-items: start;
   text-align: left;
@@ -444,8 +443,8 @@ a {
 
 .hero-slide-controls {
   position: absolute;
-  right: clamp(14px, 2vw, 28px);
-  bottom: clamp(14px, 2vw, 28px);
+  right: 2vw;
+  bottom: 2vw;
   display: inline-flex;
   align-items: center;
   gap: 0;

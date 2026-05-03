@@ -5,6 +5,11 @@ function isPlaceholderImageUrl(src) {
     return true
   }
 
+  // Relative paths (e.g. "/image.jpg") are valid local assets — never treat as placeholder
+  if (src.startsWith('/') || src.startsWith('./') || src.startsWith('../')) {
+    return false
+  }
+
   try {
     const url = new URL(src)
     return url.hostname === 'example.com' || url.hostname.endsWith('.example.com')

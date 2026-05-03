@@ -102,7 +102,7 @@ export function HomePage() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && videoRef.current) {
-          videoRef.current.play().catch(() => {})
+          videoRef.current.play().catch(() => { })
           setIsVideoPlaying(true)
           observer.disconnect() // Stop observing after the first auto-play
         }
@@ -296,7 +296,7 @@ export function HomePage() {
               <span className="support-link-label">IWS Khoa Support</span>
               <h2 className="support-link-title">We're Here to Help</h2>
               <p className="support-link-desc">
-                From offering expert advice to solving complex problems,<br/>we've got you covered.
+                From offering expert advice to solving complex problems,<br />we've got you covered.
               </p>
             </div>
             <div className="support-link-grid">
