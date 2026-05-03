@@ -63,6 +63,10 @@ model Product {
   stockQty      Int        @map("stock_qty")
   description   String
   imageUrl      String     @map("image_url")
+  imageUrl2     String?    @map("image_url_2")
+  imageUrl3     String?    @map("image_url_3")
+  imageUrl4     String?    @map("image_url_4")
+  imageUrl5     String?    @map("image_url_5")
   isDeleted     Boolean    @default(false) @map("is_deleted")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")

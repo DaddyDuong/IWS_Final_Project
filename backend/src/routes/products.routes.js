@@ -88,6 +88,10 @@ function toPublicProduct(product) {
     stockQty: product.stockQty,
     description: product.description,
     imageUrl: product.imageUrl,
+    imageUrl2: product.imageUrl2,
+    imageUrl3: product.imageUrl3,
+    imageUrl4: product.imageUrl4,
+    imageUrl5: product.imageUrl5,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
     // Extended spec fields

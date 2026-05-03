@@ -39,6 +39,10 @@ const sampleProducts = mockProducts.map(p => ({
   stockQty: Math.floor(Math.random() * 20) + 5,
   description: p.description || `${p.brand} ${p.name} - A great laptop for all your needs.`,
   imageUrl: p.imageUrl || `https://placehold.co/400x300/e2e8f0/1e293b?text=${encodeURIComponent(p.name)}`,
+  imageUrl2: p.imageUrl2 || null,
+  imageUrl3: p.imageUrl3 || null,
+  imageUrl4: p.imageUrl4 || null,
+  imageUrl5: p.imageUrl5 || null,
   // Extended spec fields
   graphic: p.graphic || null,
   screen: p.screen || null,
