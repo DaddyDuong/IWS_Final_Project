@@ -38,30 +38,30 @@ const heroSlides = [
 ]
 
 const useCases = [
-  { title: 'Study', copy: 'Portable laptops for classes, notes, and everyday browsing.' },
-  { title: 'Work', copy: 'Reliable machines for productivity, meetings, and multitasking.' },
-  { title: 'Gaming', copy: 'High-performance devices with strong CPUs, RAM, and storage.' },
-  { title: 'Creator', copy: 'Premium screens and fast storage for design, video, and code.' },
+  { title: 'Study', copy: 'Portable laptops for classes, notes, and everyday browsing.', image: '/Lap1.webp' },
+  { title: 'Work', copy: 'Reliable machines for productivity, meetings, and multitasking.', image: '/Lap2.jpg' },
+  { title: 'Gaming', copy: 'High-performance devices with strong CPUs, RAM, and storage.', image: '/Lap3.webp' },
+  { title: 'Creator', copy: 'Premium screens and fast storage for design, video, and code.', image: '/Lap4.png' },
 ]
 
 const showcaseSlides = [
   {
     tag: 'IWS Technology Showcase',
     title: 'Create Your Way',
-    copy: 'Unleash your creativity with our stylishly versatile 16-inch AI PCs.',
+    copy: 'Unleash your creativity with our stylishly versatile 16-inch Laptops.',
     linkLabel: 'Learn More',
     linkTo: '/products?useCase=creator',
   },
   {
     tag: 'IWS Technology Showcase',
-    title: 'Productivity, Refined',
+    title: 'Productivity, Refined Laptop',
     copy: 'Build faster workflows with reliable performance and all-day battery life.',
     linkLabel: 'Explore Work Picks',
     linkTo: '/products?useCase=work',
   },
   {
     tag: 'IWS Technology Showcase',
-    title: 'Power for Play',
+    title: 'Power for Play & Work',
     copy: 'Step into immersive gaming with high-refresh displays and stronger graphics.',
     linkLabel: 'View Gaming Lineup',
     linkTo: '/products?useCase=gaming',
@@ -194,7 +194,9 @@ export function HomePage() {
             {useCases.map((item) => (
               <article className="feature-card" key={item.title}>
                 <h3>{item.title}</h3>
-                <div className="feature-card__media-placeholder" aria-hidden="true" />
+                <div className="feature-card__media">
+                  <img src={item.image} alt={item.title} className="feature-card__img" />
+                </div>
                 <p>{item.copy}</p>
               </article>
             ))}
