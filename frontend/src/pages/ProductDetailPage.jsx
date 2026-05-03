@@ -130,20 +130,36 @@ export function ProductDetailPage() {
             <img 
               className="w-full h-full object-contain transition-all duration-300" 
               alt={product.name} 
-              src={product.imageUrl} 
-              style={{ filter: `brightness(${1 - (selectedImageIdx - 1) * 0.1})` }}
+              src={(() => {
+                switch(selectedImageIdx) {
+                  case 2: return product.imageUrl2 || product.imageUrl;
+                  case 3: return product.imageUrl3 || product.imageUrl;
+                  case 4: return product.imageUrl4 || product.imageUrl;
+                  case 5: return product.imageUrl5 || product.imageUrl;
+                  default: return product.imageUrl;
+                }
+              })()} 
             />
           </div>
           <div className="grid grid-cols-5 gap-4">
-            {[1, 2, 3, 4, 5].map((idx) => (
-              <div 
-                key={idx} 
-                onClick={() => setSelectedImageIdx(idx)}
-                className={`aspect-square bg-surface-container-low rounded-lg transition-all cursor-pointer overflow-hidden border-2 ${idx === selectedImageIdx ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-transparent hover:bg-surface-container-high'}`}
-              >
-                <img className="w-full h-full object-cover" alt={`Thumbnail ${idx}`} src={product.imageUrl} style={{ filter: `brightness(${1 - (idx - 1) * 0.1})` }} />
-              </div>
-            ))}
+            {[
+              product.imageUrl,
+              product.imageUrl2,
+              product.imageUrl3,
+              product.imageUrl4,
+              product.imageUrl5
+            ].filter(Boolean).map((url, idx) => {
+              const currentIdx = idx + 1;
+              return (
+                <div 
+                  key={currentIdx} 
+                  onClick={() => setSelectedImageIdx(currentIdx)}
+                  className={`aspect-square bg-surface-container-low rounded-lg transition-all cursor-pointer overflow-hidden border-2 ${currentIdx === selectedImageIdx ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-transparent hover:bg-surface-container-high'}`}
+                >
+                  <img className="w-full h-full object-cover" alt={`Thumbnail ${currentIdx}`} src={url} />
+                </div>
+              );
+            })}
           </div>
         </div>
 
