@@ -46,7 +46,7 @@
   color: #0f4ed8;
   border: none;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -69,7 +69,7 @@
 
 .addressCard {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 20px;
   cursor: pointer;
   position: relative;
@@ -99,7 +99,7 @@
   font-size: 11px;
   font-weight: 700;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 0;
   text-transform: uppercase;
 }
 
@@ -137,7 +137,7 @@
 
 .itemCard {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 20px;
   display: flex;
   gap: 20px;
@@ -148,7 +148,7 @@
   width: 100px;
   height: 100px;
   background: #f4f5f7;
-  border-radius: 8px;
+  border-radius: 0;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -185,7 +185,7 @@
   font-size: 13px;
   font-weight: 600;
   padding: 4px 12px;
-  border-radius: 12px;
+  border-radius: 0;
 }
 
 .itemRight {
@@ -213,7 +213,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 0;
   transition: all 0.2s ease;
 }
 
@@ -246,7 +246,7 @@
 
 .summaryCard {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
@@ -278,7 +278,7 @@
   font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 0;
   text-transform: uppercase;
 }
 
@@ -314,7 +314,7 @@
   color: #ffffff;
   border: none;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
@@ -333,7 +333,7 @@
 
 .protectionCard {
   background: linear-gradient(145deg, #fff8eb 0%, #fffdfa 100%);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 20px;
   display: flex;
   gap: 16px;
@@ -372,7 +372,7 @@
   width: 40px;
   height: 40px;
   background: #ffe4b5;
-  border-radius: 8px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -441,5 +441,105 @@
 
   .addressOptions {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .checkoutContainer {
+    padding: 20px 16px;
+  }
+
+  .sectionTitle {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .addressHeader h2 {
+    font-size: 20px;
+  }
+
+  .itemCard {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .itemImage {
+    width: 100%;
+    height: 160px;
+    border-radius: 0;
+  }
+
+  .itemRight {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .itemPrice {
+    font-size: 18px;
+  }
+
+  .itemName {
+    font-size: 16px;
+  }
+
+  .summaryCard {
+    padding: 20px;
+  }
+
+  .summaryCard h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .totalValue {
+    font-size: 24px;
+  }
+
+  .protectionCard {
+    padding: 16px;
+  }
+
+  .summaryDivider {
+    margin: 40px 0 16px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkoutContainer {
+    padding: 12px;
+  }
+
+  .itemMeta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .itemRight {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .addressCard {
+    padding: 14px;
+  }
+
+  .addressName {
+    font-size: 14px;
+  }
+
+  .addressDetails {
+    font-size: 13px;
+  }
+
+  .totalValue {
+    font-size: 22px;
+  }
+
+  .placeOrderBtn {
+    padding: 14px;
+    font-size: 15px;
   }
 }

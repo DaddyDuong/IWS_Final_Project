@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { fetchProfile } from '../lib/customerApi'
@@ -15,6 +15,7 @@ export function AppLayout() {
   const token = useAuthStore(state => state.token)
   const clearAuth = useAuthStore(state => state.clearAuth)
   const [username, setUsername] = useState(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (token) {
@@ -30,8 +31,11 @@ export function AppLayout() {
 
   const handleSignOut = () => {
     clearAuth()
+    setMobileMenuOpen(false)
     navigate('/login')
   }
+
+  const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
     <div className="app-shell">
@@ -40,14 +44,18 @@ export function AppLayout() {
         {/* TOP UTILITY BAR */}
         <div className="utility-bar">
           <nav aria-label="Utility navigation">
-            <p className="utility-title">
+            <Link to="/" className="utility-title" onClick={closeMobileMenu}>
               IWS KHOA <span className="utility-title--light">Technology</span>
-            </p>
+            </Link>
             <ul className="nav-links nav-links--account">
               <li className="utility-menu">
-                <span className="nav-link nav-link--utility nav-link--menu">
+                <NavLink
+                  to={username ? '/profile' : '/login'}
+                  className="nav-link nav-link--utility nav-link--menu"
+                  onClick={closeMobileMenu}
+                >
                   {username ? username : 'Sign in'}
-                </span>
+                </NavLink>
                 <div className="utility-menu__dropdown" role="menu" aria-label="Sign in options">
                   <div className="utility-signin-panel">
                     <h3>Welcome to IWS KHOA</h3>
@@ -61,6 +69,7 @@ export function AppLayout() {
                       <>
                         <NavLink
                           to="/profile"
+                          onClick={closeMobileMenu}
                           className={({ isActive }) =>
                             `utility-signin-panel__action utility-signin-panel__action--primary ${isActive ? 'is-active' : ''}`
                           }
@@ -79,6 +88,7 @@ export function AppLayout() {
                       <>
                         <NavLink
                           to="/login"
+                          onClick={closeMobileMenu}
                           className={({ isActive }) =>
                             `utility-signin-panel__action utility-signin-panel__action--primary ${isActive ? 'is-active' : ''}`
                           }
@@ -87,6 +97,7 @@ export function AppLayout() {
                         </NavLink>
                         <NavLink
                           to="/register"
+                          onClick={closeMobileMenu}
                           className={({ isActive }) =>
                             `utility-signin-panel__action utility-signin-panel__action--secondary ${isActive ? 'is-active' : ''}`
                           }
@@ -113,7 +124,18 @@ export function AppLayout() {
         </div>
 
         {/* BOTTOM PRIMARY NAV BAR */}
-        <nav className="app-nav" aria-label="Primary navigation">
+        <nav className={`app-nav ${mobileMenuOpen ? 'is-open' : ''}`} aria-label="Primary navigation">
+          <button
+            className="mobile-menu-toggle"
+            type="button"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+          >
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+          </button>
           <ul className="nav-links nav-links--primary">
             {primaryLinks.map((item) => {
               if (item.label === 'Products') {
@@ -123,17 +145,18 @@ export function AppLayout() {
                       to={item.to}
                       className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
                       end={item.to === '/'}
+                      onClick={closeMobileMenu}
                     >
                       {item.label}
                     </NavLink>
                     <div className="nav-dropdown-menu">
-                      <NavLink to="/products?brand=dell" className="nav-dropdown-link">Laptop Dell</NavLink>
-                      <NavLink to="/products?brand=acer" className="nav-dropdown-link">Laptop Acer</NavLink>
-                      <NavLink to="/products?brand=asus" className="nav-dropdown-link">Laptop Asus</NavLink>
-                      <NavLink to="/products?brand=gigabyte" className="nav-dropdown-link">Laptop Gigabyte</NavLink>
-                      <NavLink to="/products?brand=hp" className="nav-dropdown-link">Laptop HP</NavLink>
-                      <NavLink to="/products?brand=lenovo" className="nav-dropdown-link">Laptop Lenovo</NavLink>
-                      <NavLink to="/products?brand=msi" className="nav-dropdown-link">Laptop MSI</NavLink>
+                      <NavLink to="/products?brand=dell" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop Dell</NavLink>
+                      <NavLink to="/products?brand=acer" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop Acer</NavLink>
+                      <NavLink to="/products?brand=asus" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop Asus</NavLink>
+                      <NavLink to="/products?brand=gigabyte" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop Gigabyte</NavLink>
+                      <NavLink to="/products?brand=hp" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop HP</NavLink>
+                      <NavLink to="/products?brand=lenovo" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop Lenovo</NavLink>
+                      <NavLink to="/products?brand=msi" className="nav-dropdown-link" onClick={closeMobileMenu}>Laptop MSI</NavLink>
                     </div>
                   </li>
                 )
@@ -144,6 +167,7 @@ export function AppLayout() {
                     to={item.to}
                     className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
                     end={item.to === '/'}
+                    onClick={closeMobileMenu}
                   >
                     {item.label}
                   </NavLink>
