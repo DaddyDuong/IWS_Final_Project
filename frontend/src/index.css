@@ -454,50 +454,53 @@ a {
   bottom: 2vw;
   display: inline-flex;
   align-items: center;
-  gap: 0;
-  height: 44px;
+  gap: 10px;
+  height: auto;
   padding: 0;
-  overflow: hidden;
-  background: rgb(255, 255, 255);
+  overflow: visible;
+  background: transparent;
 }
 
 .hero-slide-controls__button {
-  width: 46px;
-  height: 100%;
-  border: none;
-  background: transparent;
-  color: rgba(0, 0, 0, 0.92);
+  width: 42px;
+  height: 42px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 18px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .hero-slide-controls__button:hover {
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 .hero-slide-controls__button:focus-visible {
-  outline: 2px solid rgb(255, 255, 255);
+  outline: 2px solid rgba(255, 255, 255, 0.7);
   outline-offset: 2px;
 }
 
 .hero-slide-controls__index {
-  min-width: 64px;
-  height: 100%;
-  padding: 0 10px;
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  min-width: auto;
+  height: auto;
+  padding: 6px 14px;
+  border: none;
   display: grid;
   place-items: center;
   text-align: center;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.03em;
-  color: rgba(0, 0, 0, 0.86);
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 @keyframes hero-slide-enter {
@@ -529,11 +532,11 @@ a {
 }
 
 .home-use-cases-section .eyebrow {
-  font-size: 1vw;
+  font-size: clamp(12px, 1vw, 14px);
 }
 
 .home-use-cases-section h2 {
-  font-size: 2.5vw;
+  font-size: clamp(24px, 2.5vw, 36px);
 }
 
 .home-use-cases-section .feature-grid {
@@ -554,26 +557,26 @@ a {
 }
 
 .home-use-cases-section .feature-card h3 {
-  font-size: 1.3vw;
+  font-size: clamp(16px, 1.3vw, 20px);
   margin: 0 0 0.5vw;
 }
 
 .home-use-cases-section .feature-card p {
-  font-size: 1vw;
+  font-size: clamp(13px, 1vw, 15px);
 }
 
 .store-hero h1 {
   max-width: 45vw;
   font-weight: 100;
   color: rgba(255, 255, 255, 0.92);
-  font-size: 3vw;
+  font-size: clamp(28px, 3vw, 48px);
 }
 
 .store-hero__copy {
   max-width: 30vw;
   margin: 1vw auto 0;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 1vw;
+  font-size: clamp(14px, 1vw, 16px);
   font-weight: 100;
   letter-spacing: 0.05em;
 }
@@ -585,7 +588,7 @@ a {
 
 .store-hero .button {
   padding: 0.8vw 1.6vw;
-  font-size: 1.1vw;
+  font-size: clamp(14px, 1.1vw, 17px);
 }
 
 .store-section {
@@ -610,7 +613,7 @@ a {
   color: #ffffff;
   margin-top: 0.4vw;
   margin-bottom: -1.5vw;
-  font-size: 2.2vw;
+  font-size: clamp(22px, 2.2vw, 32px);
   margin-left: 9vw;
   font-weight: 300;
 }
@@ -695,13 +698,13 @@ a {
 
 .showcase-overlay-card__eyebrow {
   margin: 0;
-  font-size: 0.9vw;
+  font-size: clamp(12px, 0.9vw, 14px);
   color: rgba(29, 29, 31, 0.8);
 }
 
 .showcase-overlay-card h3 {
   margin: 1.4vw 0 1vw;
-  font-size: 2vw;
+  font-size: clamp(20px, 2vw, 28px);
   font-weight: 200;
   color: #1d1d1f;
   line-height: 0.96;
@@ -710,7 +713,7 @@ a {
 
 .showcase-overlay-card p {
   margin: 0;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
   line-height: 1.5;
   color: rgb(0, 0, 0);
   margin-bottom: 0.8vw;
@@ -724,22 +727,28 @@ a {
   color: #0b63b5;
   text-decoration: none;
   font-weight: 400;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
 }
 
 .showcase-nav {
   position: absolute;
   top: 55%;
   transform: translateY(-50%);
-  width: 2.2vw;
-  height: 2.2vw;
-  border: 0;
-  background: rgba(255, 255, 255, 0.9);
-  color: #1d1d1f;
+  width: clamp(32px, 2.8vw, 44px);
+  height: clamp(32px, 2.8vw, 44px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   z-index: 2;
   font-size: 20px;
   font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .showcase-nav--left {
@@ -751,7 +760,8 @@ a {
 }
 
 .showcase-nav:hover {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
 .showcase-footer {
@@ -980,7 +990,7 @@ a {
 
 .showcase-eyebrow {
   padding-left: 9vw;
-  font-size: 1vw;
+  font-size: clamp(12px, 1vw, 14px);
 }
 
 .step-label {
@@ -1088,18 +1098,18 @@ a {
 }
 
 .catalog-header h1 {
-  font-size: 2.5vw;
+  font-size: clamp(24px, 2.5vw, 36px);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
 
 .catalog-header p:not(.eyebrow) {
   color: var(--sk-text-muted);
-  font-size: 1vw;
+  font-size: clamp(14px, 1vw, 16px);
 }
 
 .catalog-header .eyebrow {
-  font-size: 0.8vw;
+  font-size: clamp(11px, 0.8vw, 13px);
 }
 
 .product-filters {
@@ -1132,7 +1142,7 @@ a {
   display: grid;
   gap: 0.4vw;
   color: var(--sk-text);
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
   line-height: 1.29;
   letter-spacing: -0.224px;
 }
@@ -1144,7 +1154,7 @@ a {
   border: 1px solid var(--sk-border);
   padding: 0 0.8vw;
   font-family: inherit;
-  font-size: 0.8vw;
+  font-size: clamp(13px, 0.8vw, 14px);
   color: var(--sk-text-secondary);
   background: #ffffff;
 }
@@ -1199,7 +1209,7 @@ a {
   margin: 0;
   margin-top: 1vw;
   color: #333;
-  font-size: 1vw;
+  font-size: clamp(14px, 1vw, 16px);
   line-height: 1.4;
   letter-spacing: -0.2px;
   display: -webkit-box;
@@ -1552,14 +1562,14 @@ a {
   background: #e0f2fe;
   color: #0284c7;
   padding: 0.2vw 0.6vw;
-  font-size: 0.8vw;
+  font-size: clamp(11px, 0.8vw, 13px);
   font-weight: 600;
 }
 
 .product-specs {
   margin: 0;
   color: var(--sk-text-muted);
-  font-size: 0.9vw;
+  font-size: clamp(12px, 0.9vw, 14px);
 }
 
 .product-card__footer {
@@ -1572,13 +1582,13 @@ a {
 
 .product-price {
   color: #e30019;
-  font-size: 1.3vw;
+  font-size: clamp(16px, 1.3vw, 20px);
   font-weight: bold;
   margin-top: 0.5vw;
 }
 
 .stock {
-  font-size: 0.9vw;
+  font-size: clamp(12px, 0.9vw, 14px);
 }
 
 .stock--available {
@@ -1638,7 +1648,7 @@ a {
   margin: 0;
   color: var(--sk-text);
   font-family: var(--sk-font-display);
-  font-size: 2.5vw;
+  font-size: clamp(24px, 2.5vw, 36px);
   line-height: 1.02;
   letter-spacing: -0.045em;
   font-weight: 400;
@@ -1664,7 +1674,7 @@ a {
 .comparison-card h3 {
   margin: 0;
   color: var(--sk-text);
-  font-size: 1.2vw;
+  font-size: clamp(14px, 1.2vw, 18px);
   line-height: 1.08;
   letter-spacing: -0.03em;
 }
@@ -1685,7 +1695,7 @@ a {
 
 .comparison-card dt {
   color: var(--sk-text-muted);
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
 }
 
 .comparison-card dd {
@@ -1693,7 +1703,7 @@ a {
   color: var(--sk-text);
   font-weight: 600;
   text-align: right;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
 }
 
 .product-detail-page {
@@ -1733,7 +1743,7 @@ a {
   gap: 0.5vw;
   color: #000000;
   font-weight: 500;
-  font-size: 1vw;
+  font-size: clamp(14px, 1vw, 16px);
   text-decoration: none;
   transition: opacity 0.2s;
 }
@@ -1744,7 +1754,7 @@ a {
 
 .page-header-title {
   font-family: serif;
-  font-size: 2.5vw;
+  font-size: clamp(24px, 2.5vw, 36px);
   font-weight: 300;
   color: #1a202c;
   margin: 0;
@@ -1767,7 +1777,7 @@ a {
   background: #ffffff;
   border: 1px solid var(--sk-border);
   border-radius: 1vw;
-  font-size: 0.9vw;
+  font-size: clamp(12px, 0.9vw, 14px);
   font-weight: 500;
   color: var(--sk-text-secondary);
   transition: all 0.3s ease;
@@ -1863,14 +1873,14 @@ a {
   margin: 0;
   color: var(--sk-text);
   font-family: var(--sk-font-display);
-  font-size: 1.5vw;
+  font-size: clamp(18px, 1.5vw, 22px);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
 
 .purchase-panel p {
   margin: 0;
-  font-size: 0.8vw;
+  font-size: clamp(13px, 0.8vw, 14px);
 }
 
 .specifications-panel {
@@ -1896,7 +1906,7 @@ a {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5vw 3vw;
-  font-size: 0.9vw;
+  font-size: clamp(12px, 0.9vw, 14px);
 }
 
 .specifications-grid div {
@@ -1919,7 +1929,7 @@ a {
 }
 
 .purchase-panel .product-detail-price {
-  font-size: 2.2vw;
+  font-size: clamp(22px, 2.2vw, 32px);
   font-weight: 700;
   color: #e30019;
   margin-top: 0.5vw;
@@ -1939,7 +1949,7 @@ a {
   width: 100%;
   text-align: center;
   padding: 1vw 1.5vw;
-  font-size: 1.1vw;
+  font-size: clamp(14px, 1.1vw, 17px);
   font-weight: 600;
   border-radius: 0.8vw;
 }
@@ -2027,20 +2037,20 @@ a {
 }
 
 .support-link-label {
-  font-size: 1vw;
+  font-size: clamp(12px, 1vw, 14px);
   font-weight: 600;
   margin-bottom: 0.5vw;
   display: block;
 }
 
 .support-link-title {
-  font-size: 2.2vw;
+  font-size: clamp(22px, 2.2vw, 32px);
   font-weight: 300;
   margin-bottom: 1.1vw;
 }
 
 .support-link-desc {
-  font-size: 1.1vw;
+  font-size: clamp(14px, 1.1vw, 17px);
   line-height: 1.5;
   font-weight: 400;
 }
@@ -2089,7 +2099,7 @@ a {
 }
 
 .support-card-text {
-  font-size: 1.1vw;
+  font-size: clamp(14px, 1.1vw, 17px);
   font-weight: 500;
   letter-spacing: 0.2px;
 }
@@ -3288,7 +3298,7 @@ a {
 
 .video-subtitle {
   margin: 0;
-  font-size: 0.8vw;
+  font-size: clamp(11px, 0.8vw, 13px);
   font-weight: 300;
   line-height: 1.33;
   letter-spacing: -0.12px;
@@ -3298,7 +3308,7 @@ a {
 
 .video-heading {
   margin: 0;
-  font-size: 2.5vw;
+  font-size: clamp(24px, 2.5vw, 36px);
   font-weight: 300;
   line-height: 1.2;
   letter-spacing: -0.045em;
@@ -3307,7 +3317,7 @@ a {
 
 .video-description {
   margin: 0;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
   font-weight: 400;
   line-height: 1.6;
   letter-spacing: -0.02em;
@@ -3319,7 +3329,7 @@ a {
   padding: 0.8vw 2.2vw;
   background: #0000006d;
   color: #ffffff;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
   font-weight: 500;
   line-height: 1.47;
   letter-spacing: -0.374px;
@@ -3351,7 +3361,7 @@ a {
 .video-link {
   color: #ffffffb2;
   text-decoration: none;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
   font-weight: 400;
   line-height: 1.47;
   letter-spacing: -0.374px;
@@ -3377,7 +3387,7 @@ a {
   background: rgba(0, 0, 0, 0.355);
   color: #ffffff;
   border: none;
-  font-size: 0.8vw;
+  font-size: clamp(12px, 0.8vw, 13px);
   font-weight: 500;
   line-height: 1.33;
   letter-spacing: 0.01em;
@@ -3594,7 +3604,7 @@ a {
 
 
 .brand-section-title {
-  font-size: 2vw;
+  font-size: clamp(20px, 2vw, 28px);
   font-weight: 600;
   color: #1d1d1f;
   margin-top: 3.5vw;
@@ -4346,15 +4356,19 @@ a {
     align-self: flex-end;
     order: 10;
     margin-top: 16px;
-    height: 36px;
+    height: auto;
+    gap: 8px;
   }
 
   .hero-slide-controls__button {
-    width: 36px;
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
   }
 
   .hero-slide-controls__index {
-    min-width: 46px;
+    min-width: auto;
+    padding: 4px 10px;
     font-size: 13px;
   }
 
