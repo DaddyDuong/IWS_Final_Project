@@ -2746,13 +2746,35 @@ a {
   gap: 10px;
 }
 
-.profile-mini-cart-item__image {
+.profile-mini-cart-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}
+
+.profile-mini-cart-item-info:hover p {
+  color: #0066cc;
+}
+
+.profile-mini-cart-item__image-container {
   width: 48px;
   height: 48px;
   border-radius: 10px;
   flex: 0 0 auto;
-  background: linear-gradient(135deg, #dde6f8 0%, #f6f9ff 100%);
-  border: 1px solid #ccd8f1;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-mini-cart-item__image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .profile-mini-cart-list p {

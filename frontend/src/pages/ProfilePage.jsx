@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { fetchProfile, fetchOrders, fetchAddresses, fetchCart, updateCartItem } from '../lib/customerApi'
 import { formatApiError } from '../lib/formatters'
 import { useAuthStore } from '../stores/authStore'
+import { ProductImage } from '../components/ProductImage'
 
 const sidebarLinks = [
   { label: 'Account Details', active: true },
@@ -149,7 +150,6 @@ export function ProfilePage() {
                     type="button"
                     onClick={() => handleNavClick(sectionId)}
                   >
-                    <span className="profile-nav-item__icon" aria-hidden="true" />
                     {item.label}
                   </button>
                 </li>
@@ -159,7 +159,6 @@ export function ProfilePage() {
 
           <div className="profile-sidebar__signout-wrap">
             <button className="profile-nav-item profile-nav-item--signout" type="button" onClick={handleSignOut}>
-              <span className="profile-nav-item__icon" aria-hidden="true" />
               Sign Out
             </button>
           </div>
@@ -304,11 +303,21 @@ export function ProfilePage() {
                   <ul className="profile-mini-cart-list">
                     {cartItems.slice(0, 3).map((item) => (
                       <li key={item.id}>
-                        <span className="profile-mini-cart-item__image" aria-hidden="true" />
-                        <div>
-                          <p>{item.product?.name || item.name || 'Product'}</p>
-                          <small>{Number(item.product?.price || 0).toLocaleString('en-US')} VND × {item.quantity || 1}</small>
-                        </div>
+                        <Link to={`/products/${item.product?.id}`} className="profile-mini-cart-item-info">
+                          <div className="profile-mini-cart-item__image-container">
+                            <ProductImage 
+                              src={item.product?.imageUrl} 
+                              alt={item.product?.name} 
+                              brand={item.product?.brand}
+                              width="60"
+                              height="60"
+                            />
+                          </div>
+                          <div>
+                            <p>{item.product?.name || item.name || 'Product'}</p>
+                            <small>{Number(item.product?.price || 0).toLocaleString('en-US')} VND × {item.quantity || 1}</small>
+                          </div>
+                        </Link>
                         <div className="profile-cart-item-quantity">
                           <button 
                             className="profile-cart-qty-btn profile-cart-qty-btn--down"
